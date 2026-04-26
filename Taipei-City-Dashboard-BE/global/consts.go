@@ -29,13 +29,12 @@ const (
 	ContributorLimitTotalRequestsTimes = 50000
 	DashboardLimitAPIRequestsTimes     = 20000
 	DashboardLimitTotalRequestsTimes   = 100000
+	AIChatLimitAPIRequestsTimes        = 30
 	ChatLogLimitAPIRequestsTimes       = 60
 	IssueLimitAPIRequestsTimes         = 20000
 	IssueLimitTotalRequestsTimes       = 20000
 	LimitRequestsDuration              = 60 * time.Second
-	
 
-	
 	// JWT Issuer
 	JwtIssuer = "Taipei citydashboard"
 	// JWT Expires Duration
