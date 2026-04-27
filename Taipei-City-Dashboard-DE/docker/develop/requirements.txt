@@ -10,4 +10,5 @@ XlsxWriter==3.2.0
 pyminizip==0.2.6
 minio==7.2.5
 odfpy==1.4.1
-
+fiona==1.10.1
+geopandas==1.1.1
