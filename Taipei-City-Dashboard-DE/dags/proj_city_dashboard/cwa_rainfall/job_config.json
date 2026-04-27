@@ -1,0 +1,34 @@
+{
+  "dag_infos": {
+    "dag_id": "cwa_rainfall",
+    "start_date": "2026-04-27",
+    "schedule_interval": "*/10 * * * *",
+    "catchup": false,
+    "tags": [
+      "CWA",
+      "Rainfall",
+      "Taipei",
+      "New-Taipei",
+      "通勤預警"
+    ],
+    "description": "Fetch real-time rainfall data from CWA for Taipei and New Taipei City.",
+    "default_args": {
+      "owner": "airflow",
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "cwa_rainfall_now",
+    "ready_data_history_table": "cwa_rainfall_history",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "current+history"
+  },
+  "data_infos": {
+    "name_cn": "中央氣象署降雨觀測資料",
+    "source": "CWA Open Data API (O-A0002-001)",
+    "source_type": "API",
+    "is_geometry": 1,
+    "dataset_description": "雙北地區即時降雨觀測數據，包含 10分鐘、1小時及日累積雨量"
+  }
+}
