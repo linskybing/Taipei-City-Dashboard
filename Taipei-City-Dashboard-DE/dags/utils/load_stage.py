@@ -183,11 +183,15 @@ def save_dataframe_to_postgresql(
             default_table, conn, if_exists="append", index=False, schema="public"
         )
     elif load_behavior == "replace":
-        conn.execute(
-            sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
-                autocommit=True
+        try:
+            conn.execute(
+                sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
+                    autocommit=True
+                )
             )
-        )
+        except Exception as e:
+            print(f"Table {default_table} does not exist yet. Skipping truncate. Error: {e}")
+        
         data.to_sql(
             default_table, conn, if_exists="append", index=False, schema="public"
         )
@@ -196,11 +200,15 @@ def save_dataframe_to_postgresql(
             raise ValueError(
                 "history_table should be provided when load_behavior is `current+history`."
             )
-        conn.execute(
-            sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
-                autocommit=True
+        try:
+            conn.execute(
+                sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
+                    autocommit=True
+                )
             )
-        )
+        except Exception as e:
+            print(f"Table {default_table} does not exist yet. Skipping truncate. Error: {e}")
+            
         data.to_sql(
             default_table, conn, if_exists="append", index=False, schema="public"
         )
@@ -314,11 +322,15 @@ def save_geodataframe_to_postgresql(
             dtype={geometry_col: Geometry(geometry_type, srid=4326)},
         )
     elif load_behavior == "replace":
-        conn.execute(
-            sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
-                autocommit=True
+        try:
+            conn.execute(
+                sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
+                    autocommit=True
+                )
             )
-        )
+        except Exception as e:
+            print(f"Table {default_table} does not exist yet. Skipping truncate. Error: {e}")
+            
         gdata.to_sql(
             default_table,
             conn,
@@ -332,11 +344,15 @@ def save_geodataframe_to_postgresql(
             raise ValueError(
                 "history_table should be provided when load_behavior is `current+history`."
             )
-        conn.execute(
-            sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
-                autocommit=True
+        try:
+            conn.execute(
+                sa_text(f"TRUNCATE TABLE {default_table}").execution_options(
+                    autocommit=True
+                )
             )
-        )
+        except Exception as e:
+            print(f"Table {default_table} does not exist yet. Skipping truncate. Error: {e}")
+
         gdata.to_sql(
             default_table,
             conn,
