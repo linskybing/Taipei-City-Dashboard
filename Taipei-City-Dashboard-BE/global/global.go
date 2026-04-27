@@ -46,12 +46,15 @@ type LMConfig struct {
 }
 
 type TWCCConfig struct {
-	ApiUrl        string
-	ApiKey        string
-	Model         string
-	Timeout       int
-	MaxRetry      int
-	MaxConcurrent int
+	ApiUrl          string
+	ApiKey          string
+	Model           string
+	Timeout         int
+	MaxRetry        int
+	MaxConcurrent   int
+	ToolTimeout     int
+	MaxToolLoops    int
+	MaxToolArgBytes int
 }
 
 var (
@@ -114,12 +117,15 @@ var (
 	}
 
 	TWCC = TWCCConfig{
-		ApiUrl:        getEnv("TWCC_API_URL", "https://api-ams.twcc.ai/api"),
-		ApiKey:        getEnv("TWCC_API_KEY", "default_your_twcc_api_key_here"),
-		Model:         getEnv("TWCC_MODEL", "llama3.3-ffm-70b-16k-chat"),
-		Timeout:       getIntEnv("TWCC_TIMEOUT", 60),
-		MaxRetry:      getIntEnv("TWCC_MAX_RETRY", 2),
-		MaxConcurrent: getIntEnv("TWCC_MAX_CONCURRENT", 10),
+		ApiUrl:          getEnv("TWCC_API_URL", "https://api-ams.twcc.ai/api"),
+		ApiKey:          getEnv("TWCC_API_KEY", ""),
+		Model:           getEnv("TWCC_MODEL", "llama3.3-ffm-70b-16k-chat"),
+		Timeout:         getIntEnv("TWCC_TIMEOUT", 60),
+		MaxRetry:        getIntEnv("TWCC_MAX_RETRY", 2),
+		MaxConcurrent:   getIntEnv("TWCC_MAX_CONCURRENT", 10),
+		ToolTimeout:     getIntEnv("TWCC_TOOL_TIMEOUT", 8),
+		MaxToolLoops:    getIntEnv("TWCC_MAX_TOOL_LOOPS", 5),
+		MaxToolArgBytes: getIntEnv("TWCC_MAX_TOOL_ARG_BYTES", 4096),
 	}
 
 	LMSession   *ort.DynamicSession[int64, float32]

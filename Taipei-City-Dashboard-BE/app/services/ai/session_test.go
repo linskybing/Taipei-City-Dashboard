@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"TaipeiCityDashboardBE/global"
 	"context"
 	"strings"
 	"testing"
@@ -16,7 +17,30 @@ func TestExecuteAllowedToolRejectsUnlistedTool(t *testing.T) {
 }
 
 func TestMaxToolLoopsBounded(t *testing.T) {
-	if maxToolLoops != 5 {
-		t.Fatalf("maxToolLoops = %d, want 5", maxToolLoops)
+	original := global.TWCC.MaxToolLoops
+	defer func() { global.TWCC.MaxToolLoops = original }()
+
+	global.TWCC.MaxToolLoops = 0
+	if configuredToolLoops() != 1 {
+		t.Fatalf("configuredToolLoops = %d, want 1", configuredToolLoops())
+	}
+	global.TWCC.MaxToolLoops = 50
+	if configuredToolLoops() != maxAllowedToolLoops {
+		t.Fatalf("configuredToolLoops = %d, want %d", configuredToolLoops(), maxAllowedToolLoops)
+	}
+}
+
+func TestNormalizeToolArgsRequiresJSONObject(t *testing.T) {
+	for _, args := range []string{`[]`, `"text"`, `{bad-json`} {
+		if _, err := normalizeToolArgs(args); err == nil {
+			t.Fatalf("expected invalid args error for %q", args)
+		}
+	}
+	normalized, err := normalizeToolArgs("")
+	if err != nil {
+		t.Fatalf("empty args should normalize to object: %v", err)
+	}
+	if normalized != "{}" {
+		t.Fatalf("normalized = %q, want {}", normalized)
 	}
 }

@@ -2,7 +2,7 @@ package ai
 
 import (
 	"TaipeiCityDashboardBE/app/models"
-	"TaipeiCityDashboardBE/app/services/ai/tools"
+	"TaipeiCityDashboardBE/app/services/ai/assistant"
 	"TaipeiCityDashboardBE/global"
 	"TaipeiCityDashboardBE/logs"
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/tmc/langchaingo/llms"
 )
 
-const maxToolLoops = 5
+const maxAllowedToolLoops = 10
 
 type aiSession struct {
 	req             AIChatRequest
@@ -24,6 +24,7 @@ type aiSession struct {
 	toolUsed        bool
 	executedTools   []string
 	toolResults     []string
+	toolEvents      []assistant.ToolEvent
 	allowedTools    map[string]bool
 	lastResp        *llms.ContentResponse
 	lastErr         error
@@ -33,7 +34,9 @@ type aiSession struct {
 func (s *aiSession) run(ctx context.Context) (*models.AIChatLog, error) {
 	s.executedTools = make([]string, 0)
 	s.toolResults = make([]string, 0)
-	for i := 0; i < maxToolLoops; i++ {
+	s.toolEvents = make([]assistant.ToolEvent, 0)
+	maxLoops := configuredToolLoops()
+	for i := 0; i < maxLoops; i++ {
 		s.sendHeartbeat(ctx)
 		if err := s.generate(ctx); err != nil {
 			break
@@ -44,11 +47,12 @@ func (s *aiSession) run(ctx context.Context) (*models.AIChatLog, error) {
 		}
 		s.toolUsed = true
 		logs.FInfo("Loop %d: Processing %d tool calls", i, len(toolCalls))
-		if err := s.executeTools(ctx, toolCalls); err != nil {
+		if err := s.executeTools(ctx, toolCalls, i+1); err != nil {
 			break
 		}
-		if i == maxToolLoops-1 {
-			s.lastErr = fmt.Errorf("tool call loop limit exceeded")
+		if i == maxLoops-1 {
+			s.lastErr = fmt.Errorf("tool call loop limit exceeded after %d loops", maxLoops)
+			s.recordToolEvent("tool_loop", "error", i+1, 0, s.lastErr)
 			break
 		}
 	}
@@ -98,7 +102,7 @@ func (s *aiSession) updateTokens() {
 	}
 }
 
-func (s *aiSession) executeTools(ctx context.Context, toolCalls []llms.ToolCall) error {
+func (s *aiSession) executeTools(ctx context.Context, toolCalls []llms.ToolCall, loop int) error {
 	choice := s.lastResp.Choices[0]
 	s.currentMessages = append(s.currentMessages, llms.MessageContent{
 		Role:  llms.ChatMessageTypeAI,
@@ -106,33 +110,29 @@ func (s *aiSession) executeTools(ctx context.Context, toolCalls []llms.ToolCall)
 	})
 	for _, tc := range toolCalls {
 		name, args := toolCallPayload(tc)
-		s.executedTools = append(s.executedTools, name)
+		auditName := auditToolName(name)
+		s.executedTools = append(s.executedTools, auditName)
+		start := time.Now()
 		result, err := s.executeAllowedTool(ctx, name, args)
+		latencyMS := int(time.Since(start).Milliseconds())
 		if err != nil {
-			result = fmt.Sprintf("Error: %v. Please verify arguments.", err)
+			s.recordToolEvent(auditName, "error", loop, latencyMS, err)
+			result = buildToolFallback(auditName, err)
 			logs.FError("Tool Error: %v", err)
+		} else {
+			s.recordToolEvent(auditName, "success", loop, latencyMS, nil)
 		}
 		s.toolResults = append(s.toolResults, result)
 		s.currentMessages = append(s.currentMessages, llms.MessageContent{
 			Role: llms.ChatMessageTypeTool,
 			Parts: []llms.ContentPart{llms.ToolCallResponse{
 				ToolCallID: tc.ID,
-				Name:       name,
+				Name:       auditName,
 				Content:    result,
 			}},
 		})
 	}
 	return nil
-}
-
-func (s *aiSession) executeAllowedTool(ctx context.Context, name string, args string) (string, error) {
-	if name == "" {
-		return "", fmt.Errorf("tool name is required")
-	}
-	if !s.allowedTools[name] {
-		return "", fmt.Errorf("tool %s is not allowed", name)
-	}
-	return tools.Execute(ctx, name, args)
 }
 
 func (s *aiSession) injectInstructions() {

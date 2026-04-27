@@ -64,10 +64,11 @@ func NewContext(theme, city, audience, dashboardIndex string) (RequestContext, e
 
 func (c RequestContext) Metadata() map[string]interface{} {
 	return map[string]interface{}{
-		"theme":           c.Theme,
-		"city":            c.City,
-		"audience":        c.Audience,
-		"dashboard_index": c.DashboardIndex,
+		"theme":             c.Theme,
+		"city":              c.City,
+		"audience":          c.Audience,
+		"dashboard_index":   c.DashboardIndex,
+		"decision_playbook": playbookFor(c.Theme),
 	}
 }
 

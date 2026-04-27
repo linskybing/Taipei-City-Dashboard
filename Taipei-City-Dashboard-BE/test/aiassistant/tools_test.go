@@ -72,6 +72,15 @@ func TestToolExecutionValidation(t *testing.T) {
 	if actions, ok := envelope["recommended_actions"].([]interface{}); !ok || len(actions) == 0 {
 		t.Fatalf("recommended_actions missing from output: %s", output)
 	}
+	data, ok := envelope["data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("data missing from output: %s", output)
+	}
+	playbook, ok := data["decision_playbook"].(map[string]interface{})
+	if !ok || playbook["label"] != "食安事件到就醫行動" {
+		t.Fatalf("decision_playbook missing or wrong: %#v", data["decision_playbook"])
+	}
+	assertContainsAction(t, envelope["recommended_actions"], "只提供風險解讀與資源，不提供診斷")
 }
 
 func TestRecommendActionsRejectsBadInput(t *testing.T) {
@@ -96,4 +105,18 @@ func findTool(t *testing.T, tools []llms.Tool, name string) llms.Tool {
 	}
 	t.Fatalf("tool %q not found", name)
 	return llms.Tool{}
+}
+
+func assertContainsAction(t *testing.T, raw interface{}, expected string) {
+	t.Helper()
+	actions, ok := raw.([]interface{})
+	if !ok {
+		t.Fatalf("actions type = %T", raw)
+	}
+	for _, action := range actions {
+		if action == expected {
+			return
+		}
+	}
+	t.Fatalf("actions %#v missing %q", actions, expected)
 }

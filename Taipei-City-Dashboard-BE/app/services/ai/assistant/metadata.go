@@ -2,12 +2,26 @@ package assistant
 
 import "encoding/json"
 
-func BuildMetadata(base map[string]interface{}, toolNames []string, toolOutputs []string) string {
+type ToolEvent struct {
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+	Loop      int    `json:"loop"`
+	LatencyMS int    `json:"latency_ms"`
+	Error     string `json:"error,omitempty"`
+}
+
+func BuildMetadata(
+	base map[string]interface{},
+	toolNames []string,
+	toolOutputs []string,
+	toolEvents []ToolEvent,
+) string {
 	metadata := make(map[string]interface{})
 	for key, value := range base {
 		metadata[key] = value
 	}
 	metadata["tool_names"] = toolNames
+	metadata["tool_events"] = toolEvents
 
 	extras := mergeToolOutputs(toolOutputs)
 	metadata["sources"] = extras.Sources

@@ -54,6 +54,7 @@ func ThemeLabel(theme string) string {
 }
 
 func buildSystemInstruction(ctx RequestContext) string {
+	playbook := playbookFor(ctx.Theme)
 	return fmt.Sprintf(`你是臺北城市儀表板的六主題 AI 決策助理。
 使用情境：
 - 主題：%s (%s)
@@ -61,14 +62,36 @@ func buildSystemInstruction(ctx RequestContext) string {
 - 受眾：%s
 - 儀表板索引：%s
 
+決策模板：
+- 決策問題：%s
+- 地圖圖層：%s
+- 趨勢圖：%s
+- 比較/排行圖：%s
+- 優先訊號：%s
+- 行動步驟：%s
+- 保守邊界：%s
+
 規則：
 1. 必須優先使用後端提供的 tools 取得組件、資料來源與儀表板脈絡。
 2. 不得編造資料、SQL、模型、來源或即時狀態；資料不足時要明確說明限制。
 3. 回答使用繁體中文，給出可執行的市政/民眾決策建議。
 4. 若涉及城市比較，使用 compare_city_components。
 5. 若問題很廣，先使用 search_components，再視需要使用 get_component_snapshot。
-6. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。`,
-		ctx.Theme, ThemeLabel(ctx.Theme), ctx.City, ctx.Audience, emptyAsNone(ctx.DashboardIndex))
+6. 不直接呼叫模型供應商，不透露金鑰、模型細節或後端設定。
+7. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。`,
+		ctx.Theme,
+		ThemeLabel(ctx.Theme),
+		ctx.City,
+		ctx.Audience,
+		emptyAsNone(ctx.DashboardIndex),
+		playbook.Question,
+		playbook.MapLayer,
+		playbook.TrendChart,
+		playbook.RankChart,
+		strings.Join(playbook.Signals, "、"),
+		strings.Join(playbook.Steps, " → "),
+		strings.Join(playbook.Guardrails, "；"),
+	)
 }
 
 func mergeSystemMessage(msg llms.MessageContent, instruction string) llms.MessageContent {

@@ -22,7 +22,7 @@ func (s *aiSession) finalize() (*models.AIChatLog, error) {
 		Status:       "success",
 		Tools:        "[]",
 		CreatedAt:    s.startTime,
-		Metadata:     assistant.BuildMetadata(s.req.Params, s.executedTools, s.toolResults),
+		Metadata:     assistant.BuildMetadata(s.req.Params, s.executedTools, s.toolResults, s.toolEvents),
 		InputTokens:  s.totalInput,
 		OutputTokens: s.totalOutput,
 		TotalTokens:  s.totalInput + s.totalOutput,
@@ -79,11 +79,16 @@ func allowedToolMap(tools []llms.Tool) map[string]bool {
 
 func toolNames(tools []llms.Tool) string {
 	names := ""
-	for i, tool := range tools {
-		if i > 0 {
+	count := 0
+	for _, tool := range tools {
+		if tool.Function == nil {
+			continue
+		}
+		if count > 0 {
 			names += ", "
 		}
 		names += tool.Function.Name
+		count++
 	}
 	return names
 }

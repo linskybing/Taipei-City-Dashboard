@@ -49,7 +49,7 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 
 	results, err := models.GetComponentByQueryVector(query, limit*2, score)
 	if err != nil {
-		return "", err
+		return unavailableTool("search_components", err)
 	}
 	related := filterComponents(results, req.City, limit)
 	return marshalTool(toolEnvelope{
@@ -80,7 +80,7 @@ func GetComponentSnapshot(ctx context.Context, args string) (string, error) {
 	}
 	component, err := getComponent(input.ComponentID, req.City)
 	if err != nil {
-		return "", err
+		return unavailableTool("get_component_snapshot", err)
 	}
 	related := []RelatedComponent{relatedFromComponent(component, 0)}
 	return marshalTool(toolEnvelope{
@@ -108,7 +108,7 @@ func CompareCityComponents(ctx context.Context, args string) (string, error) {
 		var err error
 		index, err = getComponentIndex(input.ComponentID)
 		if err != nil {
-			return "", err
+			return unavailableTool("compare_city_components", err)
 		}
 	}
 	if index == "" {
@@ -116,7 +116,7 @@ func CompareCityComponents(ctx context.Context, args string) (string, error) {
 	}
 	componentID, err := getComponentID(index)
 	if err != nil {
-		return "", err
+		return unavailableTool("compare_city_components", err)
 	}
 	comparison, related, sources := compareByCity(componentID)
 	return marshalTool(toolEnvelope{
@@ -145,7 +145,7 @@ func GetDashboardContext(ctx context.Context, args string) (string, error) {
 	}
 	components, err := getDashboardComponents(req.DashboardIndex, req.City, 8)
 	if err != nil {
-		return "", err
+		return unavailableTool("get_dashboard_context", err)
 	}
 	related, sources := summarizeComponents(components)
 	return marshalTool(toolEnvelope{
@@ -175,12 +175,14 @@ func RecommendActions(ctx context.Context, args string) (string, error) {
 		return "", err
 	}
 	actions := actionsFor(req.Theme, req.Audience)
+	playbook := playbookFor(req.Theme)
 	return marshalTool(toolEnvelope{
 		Tool:               "recommend_actions",
 		RecommendedActions: actions,
 		ConfidenceNotes:    []string{"建議為主題模板與已檢索訊號的決策整理，仍需由業務單位確認。"},
 		Data: map[string]interface{}{
-			"theme": req.Theme, "city": req.City, "audience": req.Audience, "signals": input.Signals,
+			"theme": req.Theme, "city": req.City, "audience": req.Audience,
+			"signals": input.Signals, "decision_playbook": playbook,
 		},
 	})
 }

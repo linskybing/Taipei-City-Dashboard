@@ -75,6 +75,9 @@ services:
       TWCC_TIMEOUT: ${TWCC_TIMEOUT}
       TWCC_MAX_RETRY: ${TWCC_MAX_RETRY}
       TWCC_MAX_CONCURRENT: ${TWCC_MAX_CONCURRENT}
+      TWCC_TOOL_TIMEOUT: ${TWCC_TOOL_TIMEOUT}
+      TWCC_MAX_TOOL_LOOPS: ${TWCC_MAX_TOOL_LOOPS}
+      TWCC_MAX_TOOL_ARG_BYTES: ${TWCC_MAX_TOOL_ARG_BYTES}
     volumes:
       - ../Taipei-City-Dashboard-BE:/opt/Taipei-City-Dashboard-BE
     working_dir: /opt/Taipei-City-Dashboard-BE

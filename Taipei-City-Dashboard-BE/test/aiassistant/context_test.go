@@ -26,6 +26,9 @@ func TestContextDefaultsAndMetadata(t *testing.T) {
 	if ctx.Metadata()["dashboard_index"] != "main-dashboard" {
 		t.Fatalf("metadata did not preserve dashboard index: %#v", ctx.Metadata())
 	}
+	if _, ok := ctx.Metadata()["decision_playbook"]; !ok {
+		t.Fatalf("metadata missing decision playbook: %#v", ctx.Metadata())
+	}
 }
 
 func TestContextAcceptsSixHackathonThemes(t *testing.T) {
@@ -59,5 +62,30 @@ func TestContextRejectsInvalidValues(t *testing.T) {
 				t.Fatal("expected validation error")
 			}
 		})
+	}
+}
+
+func TestThemePlaybooksCoverSixHackathonThemes(t *testing.T) {
+	expectedQuestion := map[string]string{
+		"commuting":   "哪個轉乘或最後一哩節點最可能失敗？",
+		"disaster":    "未來數小時哪個避難點仍可到達且合適？",
+		"environment": "何時何地的熱與空污暴露最低？",
+		"health":      "近期食安事件是否影響家庭行動？",
+		"labor":       "哪組訓練、就服與照顧資源走得完？",
+		"culture":     "哪裡活動供給未接住新住民需求？",
+	}
+
+	for theme, question := range expectedQuestion {
+		ctx, err := assistant.NewContext(theme, "metrotaipei", "government", "")
+		if err != nil {
+			t.Fatalf("NewContext(%q) returned error: %v", theme, err)
+		}
+		playbook, ok := ctx.Metadata()["decision_playbook"].(assistant.DecisionPlaybook)
+		if !ok {
+			t.Fatalf("decision_playbook type = %T", ctx.Metadata()["decision_playbook"])
+		}
+		if playbook.Question != question {
+			t.Fatalf("%s question = %q, want %q", theme, playbook.Question, question)
+		}
 	}
 }

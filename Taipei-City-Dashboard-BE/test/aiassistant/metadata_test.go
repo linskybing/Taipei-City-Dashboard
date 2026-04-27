@@ -1,6 +1,7 @@
 package aiassistant_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"TaipeiCityDashboardBE/app/services/ai/assistant"
@@ -28,6 +29,7 @@ func TestMetadataMergesToolOutputs(t *testing.T) {
 		map[string]interface{}{"theme": "environment", "city": "taipei", "audience": "government"},
 		[]string{"search_components", "recommend_actions"},
 		outputs,
+		[]assistant.ToolEvent{{Name: "search_components", Status: "success", Loop: 1, LatencyMS: 12}},
 	)
 	extras := assistant.ResponseExtrasFromMetadata(raw)
 
@@ -42,6 +44,14 @@ func TestMetadataMergesToolOutputs(t *testing.T) {
 	}
 	if len(extras.ConfidenceNotes) != 2 {
 		t.Fatalf("ConfidenceNotes length = %d, want 2", len(extras.ConfidenceNotes))
+	}
+	var metadata map[string]interface{}
+	if err := json.Unmarshal([]byte(raw), &metadata); err != nil {
+		t.Fatalf("metadata JSON invalid: %v", err)
+	}
+	events, ok := metadata["tool_events"].([]interface{})
+	if !ok || len(events) != 1 {
+		t.Fatalf("tool_events missing from metadata: %s", raw)
 	}
 }
 

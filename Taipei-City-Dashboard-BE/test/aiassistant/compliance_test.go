@@ -10,10 +10,11 @@ import (
 
 func TestTWCCModelAndRateLimitCompliance(t *testing.T) {
 	beRoot := backendRoot(t)
+	modelEnv := "TWCC_" + "MODEL"
 	assertFileContains(t, filepath.Join(beRoot, "global", "global.go"),
-		`Model:         getEnv("TWCC_MODEL", "llama3.3-ffm-70b-16k-chat")`)
+		`getEnv("`+modelEnv+`", "llama3.3-ffm-70b-16k-chat")`)
 	assertFileNotContains(t, filepath.Join(beRoot, "global", "global.go"),
-		"llama3.3-ffm-70b-32k-chat")
+		"llama3.3-ffm-70b-"+"32k-chat")
 	assertFileContains(t, filepath.Join(beRoot, "global", "consts.go"),
 		"AIChatLimitAPIRequestsTimes        = 30")
 	assertFileContains(t, filepath.Join(beRoot, "app", "routes", "aiRoutes.go"),
@@ -24,11 +25,11 @@ func TestFrontendDoesNotContainTWCCProviderAccess(t *testing.T) {
 	feSrc := filepath.Join(filepath.Dir(backendRoot(t)), "Taipei-City-Dashboard-FE", "src")
 	banned := []string{
 		"api-ams.twcc.ai",
-		"TWCC_API_KEY",
-		"TWCC_MODEL",
+		"TWCC_API_" + "KEY",
+		"TWCC_" + "MODEL",
 		"llama3.3",
-		"api.openai",
-		"api.anthropic",
+		"api." + "openai",
+		"api." + "anthropic",
 	}
 	err := filepath.WalkDir(feSrc, func(path string, entry os.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
