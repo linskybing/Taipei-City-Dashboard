@@ -18,6 +18,13 @@ func TestToolDefinitionsExposeOnlyAssistantTools(t *testing.T) {
 		"compare_city_components": true,
 		"get_dashboard_context":   true,
 		"recommend_actions":       true,
+		"clean_impute":            true,
+		"descriptive_report":      true,
+		"trend_detect":            true,
+		"seasonal_decompose":      true,
+		"anomaly_detect":          true,
+		"hypothesis_test":         true,
+		"forecast_short_mid":      true,
 	}
 
 	for _, tool := range assistant.ToolDefinitions() {
@@ -50,6 +57,22 @@ func TestToolDefinitionsCarrySchemaEnums(t *testing.T) {
 	}
 	assertEnum(t, properties["theme"], "commuting", "disaster", "environment", "health", "labor", "culture")
 	assertEnum(t, properties["city"], "taipei", "metrotaipei")
+}
+
+func TestStatToolDefinitionsRequireComponentID(t *testing.T) {
+	for _, name := range []string{"clean_impute", "descriptive_report", "trend_detect", "seasonal_decompose", "anomaly_detect", "hypothesis_test", "forecast_short_mid"} {
+		tool := findTool(t, assistant.ToolDefinitions(), name)
+		params := tool.Function.Parameters.(map[string]interface{})
+		required := params["required"].([]string)
+		properties := params["properties"].(map[string]interface{})
+		if !contains(required, "component_id") {
+			t.Fatalf("%s required = %#v, want component_id", name, required)
+		}
+		if _, ok := properties["time_range"]; !ok {
+			t.Fatalf("%s missing time_range property", name)
+		}
+		assertEnum(t, properties["city"], "taipei", "metrotaipei")
+	}
 }
 
 func TestToolExecutionValidation(t *testing.T) {

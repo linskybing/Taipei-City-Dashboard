@@ -23,6 +23,7 @@ func (s *aiSession) executeAllowedTool(ctx context.Context, name string, args st
 	if err != nil {
 		return "", err
 	}
+	normalizedArgs = s.applyToolContextDefaults(normalizedArgs)
 	toolCtx, cancel := context.WithTimeout(ctx, time.Duration(configuredToolTimeout())*time.Second)
 	defer cancel()
 	return tools.Execute(toolCtx, name, normalizedArgs)
@@ -76,6 +77,46 @@ func buildToolFallback(name string, err error) string {
 		return fmt.Sprintf(`{"tool":%q,"data":{"status":"error"}}`, name)
 	}
 	return string(raw)
+}
+
+func (s *aiSession) applyToolContextDefaults(args string) string {
+	var payload map[string]interface{}
+	if json.Unmarshal([]byte(args), &payload) != nil {
+		return args
+	}
+	for _, key := range []string{"theme", "city", "audience", "dashboard_index"} {
+		if _, ok := payload[key]; ok {
+			continue
+		}
+		value, ok := s.req.Params[key].(string)
+		if ok && strings.TrimSpace(value) != "" {
+			payload[key] = value
+		}
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return args
+	}
+	return string(data)
+}
+
+func toolResultStatus(result string) string {
+	var payload struct {
+		Data struct {
+			Status string `json:"status"`
+		} `json:"data"`
+	}
+	if json.Unmarshal([]byte(result), &payload) != nil {
+		return "success"
+	}
+	switch payload.Data.Status {
+	case "unavailable":
+		return "unavailable"
+	case "error":
+		return "error"
+	default:
+		return "success"
+	}
 }
 
 func auditToolName(name string) string {

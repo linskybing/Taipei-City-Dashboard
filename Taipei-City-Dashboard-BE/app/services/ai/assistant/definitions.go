@@ -3,7 +3,7 @@ package assistant
 import "github.com/tmc/langchaingo/llms"
 
 func ToolDefinitions() []llms.Tool {
-	return []llms.Tool{
+	definitions := []llms.Tool{
 		defineTool("search_components", "Search dashboard components by a natural-language policy or city signal query.", map[string]interface{}{
 			"query":           stringSchema("Natural-language query to search for matching dashboard components."),
 			"theme":           enumSchema(validThemeValues(), "Hackathon theme."),
@@ -30,6 +30,7 @@ func ToolDefinitions() []llms.Tool {
 			"signals":  arraySchema("Dashboard signals or facts already found."),
 		}, []string{"theme", "city", "audience"}),
 	}
+	return append(definitions, statisticalToolDefinitions()...)
 }
 
 func defineTool(name string, description string, properties map[string]interface{}, required []string) llms.Tool {

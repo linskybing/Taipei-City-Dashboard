@@ -44,3 +44,25 @@ func TestNormalizeToolArgsRequiresJSONObject(t *testing.T) {
 		t.Fatalf("normalized = %q, want {}", normalized)
 	}
 }
+
+func TestApplyToolContextDefaults(t *testing.T) {
+	session := &aiSession{req: AIChatRequest{Params: map[string]interface{}{
+		"theme": "health", "city": "taipei", "audience": "public",
+	}}}
+	args := session.applyToolContextDefaults(`{"component_id":12}`)
+	for _, expected := range []string{`"component_id":12`, `"theme":"health"`, `"city":"taipei"`, `"audience":"public"`} {
+		if !strings.Contains(args, expected) {
+			t.Fatalf("args %s missing %s", args, expected)
+		}
+	}
+}
+
+func TestToolResultStatusDistinguishesUnavailable(t *testing.T) {
+	result := `{"tool":"x","data":{"status":"unavailable"}}`
+	if status := toolResultStatus(result); status != "unavailable" {
+		t.Fatalf("status = %s, want unavailable", status)
+	}
+	if status := toolResultStatus(`{"tool":"x"}`); status != "success" {
+		t.Fatalf("status = %s, want success", status)
+	}
+}

@@ -28,6 +28,7 @@ func BuildMetadata(
 	metadata["related_components"] = extras.RelatedComponents
 	metadata["recommended_actions"] = extras.RecommendedActions
 	metadata["confidence_notes"] = extras.ConfidenceNotes
+	metadata["analysis_cards"] = extras.AnalysisCards
 
 	data, err := json.Marshal(metadata)
 	if err != nil {
@@ -46,6 +47,7 @@ func ResponseExtrasFromMetadata(raw string) ResponseExtras {
 	json.Unmarshal(rawMap["related_components"], &extras.RelatedComponents)
 	json.Unmarshal(rawMap["recommended_actions"], &extras.RecommendedActions)
 	json.Unmarshal(rawMap["confidence_notes"], &extras.ConfidenceNotes)
+	json.Unmarshal(rawMap["analysis_cards"], &extras.AnalysisCards)
 	return extras
 }
 
@@ -55,6 +57,7 @@ func mergeToolOutputs(outputs []string) ResponseExtras {
 	componentSeen := make(map[string]bool)
 	actionSeen := make(map[string]bool)
 	noteSeen := make(map[string]bool)
+	cardSeen := make(map[string]bool)
 
 	for _, output := range outputs {
 		var envelope toolEnvelope
@@ -77,6 +80,13 @@ func mergeToolOutputs(outputs []string) ResponseExtras {
 		}
 		appendUniqueStrings(&extras.RecommendedActions, envelope.RecommendedActions, actionSeen)
 		appendUniqueStrings(&extras.ConfidenceNotes, envelope.ConfidenceNotes, noteSeen)
+		for _, card := range envelope.AnalysisCards {
+			key := card.Tool + card.Headline
+			if !cardSeen[key] {
+				extras.AnalysisCards = append(extras.AnalysisCards, card)
+				cardSeen[key] = true
+			}
+		}
 	}
 	return extras
 }

@@ -78,7 +78,9 @@ func buildSystemInstruction(ctx RequestContext) string {
 4. 若涉及城市比較，使用 compare_city_components。
 5. 若問題很廣，先使用 search_components，再視需要使用 get_component_snapshot。
 6. 不直接呼叫模型供應商，不透露金鑰、模型細節或後端設定。
-7. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。`,
+7. 使用者要求資料品質、描述統計、趨勢、季節、異常、檢定或預測時，優先呼叫對應統計工具。
+8. 除非工具明確回傳因果設計，否則不得使用「造成」「導致」「政策效果」等因果語彙。
+9. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。`,
 		ctx.Theme,
 		ThemeLabel(ctx.Theme),
 		ctx.City,

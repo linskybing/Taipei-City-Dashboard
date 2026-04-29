@@ -120,7 +120,7 @@ func (s *aiSession) executeTools(ctx context.Context, toolCalls []llms.ToolCall,
 			result = buildToolFallback(auditName, err)
 			logs.FError("Tool Error: %v", err)
 		} else {
-			s.recordToolEvent(auditName, "success", loop, latencyMS, nil)
+			s.recordToolEvent(auditName, toolResultStatus(result), loop, latencyMS, nil)
 		}
 		s.toolResults = append(s.toolResults, result)
 		s.currentMessages = append(s.currentMessages, llms.MessageContent{

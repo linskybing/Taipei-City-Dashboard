@@ -39,6 +39,25 @@ type ResponseExtras struct {
 	RelatedComponents  []RelatedComponent `json:"related_components"`
 	RecommendedActions []string           `json:"recommended_actions"`
 	ConfidenceNotes    []string           `json:"confidence_notes"`
+	AnalysisCards      []AnalysisCard     `json:"analysis_cards"`
+}
+
+type AnalysisUncertainty struct {
+	Interval         string  `json:"interval"`
+	DataQualityScore float64 `json:"data_quality_score"`
+	ConfidenceLabel  string  `json:"confidence_label"`
+	CalibrationNote  string  `json:"calibration_note"`
+}
+
+type AnalysisCard struct {
+	Tool             string              `json:"tool"`
+	Headline         string              `json:"headline"`
+	KeyFindings      []string            `json:"key_findings"`
+	Assumptions      []string            `json:"assumptions"`
+	Uncertainty      AnalysisUncertainty `json:"uncertainty"`
+	ConfidenceLabel  string              `json:"confidence_label"`
+	SourceComponents []RelatedComponent  `json:"source_components"`
+	Data             interface{}         `json:"data,omitempty"`
 }
 
 func NewContext(theme, city, audience, dashboardIndex string) (RequestContext, error) {

@@ -14,6 +14,7 @@ type toolEnvelope struct {
 	RelatedComponents  []RelatedComponent `json:"related_components,omitempty"`
 	RecommendedActions []string           `json:"recommended_actions,omitempty"`
 	ConfidenceNotes    []string           `json:"confidence_notes,omitempty"`
+	AnalysisCards      []AnalysisCard     `json:"analysis_cards,omitempty"`
 	Data               interface{}        `json:"data,omitempty"`
 }
 

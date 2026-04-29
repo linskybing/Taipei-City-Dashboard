@@ -50,39 +50,12 @@ func (input *AIChatInput) ToServiceMessages() []llms.MessageContent {
 		switch m.Role {
 		case "assistant":
 			role = llms.ChatMessageTypeAI
-			parts = append(parts, inputToolCallsToParts(m.ToolCalls)...)
 		case "system":
-			role = llms.ChatMessageTypeSystem
+			continue
 		case "tool":
-			role = llms.ChatMessageTypeTool
-			parts = []llms.ContentPart{llms.ToolCallResponse{
-				ToolCallID: m.ToolCallID,
-				Content:    m.Content,
-			}}
+			continue
 		}
 		serviceMsgs = append(serviceMsgs, llms.MessageContent{Role: role, Parts: parts})
 	}
 	return serviceMsgs
-}
-
-func inputToolCallsToParts(calls []struct {
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Function struct {
-		Name      string `json:"name"`
-		Arguments string `json:"arguments"`
-	} `json:"function"`
-}) []llms.ContentPart {
-	parts := make([]llms.ContentPart, 0, len(calls))
-	for _, tc := range calls {
-		parts = append(parts, llms.ToolCall{
-			ID:   tc.ID,
-			Type: tc.Type,
-			FunctionCall: &llms.FunctionCall{
-				Name:      tc.Function.Name,
-				Arguments: tc.Function.Arguments,
-			},
-		})
-	}
-	return parts
 }
