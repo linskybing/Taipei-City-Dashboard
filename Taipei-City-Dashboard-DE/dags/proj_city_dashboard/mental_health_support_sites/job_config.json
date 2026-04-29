@@ -1,0 +1,53 @@
+{
+  "dag_infos": {
+    "dag_id": "mental_health_support_sites",
+    "start_date": "2026-04-29",
+    "schedule_interval": "0 4 * * *",
+    "catchup": false,
+    "tags": ["心理健康", "衛生福利部", "雙北"],
+    "description": "Daily snapshot of Taipei and New Taipei mental health support locations from MOHW Wellbeing mmap.",
+    "default_args": {
+      "owner": "airflow",
+      "email": ["DEFAULT_EMAIL_LIST"],
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "heal_mental_health_sites",
+    "ready_data_history_table": "",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "replace",
+    "api_base_url": "https://wellbeing.mohw.gov.tw/nor/mmap",
+    "county_names": ["臺北市", "新北市"],
+    "tag_type": "選擇類別",
+    "request_timeout": 30,
+    "verify_ssl": false,
+    "geojson_output_dir": "",
+    "geojson_outputs": [
+      {
+        "filename": "mental_health_support_sites_tpe.geojson",
+        "county_names": ["臺北市"]
+      },
+      {
+        "filename": "mental_health_support_sites_metrotaipei.geojson",
+        "county_names": ["臺北市", "新北市"]
+      }
+    ]
+  },
+  "data_infos": {
+    "name_cn": "雙北心理健康支持機構據點",
+    "airflow_update_freq": "04:00+8 每日",
+    "source": "https://wellbeing.mohw.gov.tw/nor/mmap/",
+    "source_type": "MOHW Wellbeing mmap json",
+    "source_dept": "衛生福利部",
+    "gis_format": "Point",
+    "output_coordinate": "EPSG:4326",
+    "is_geometry": 1,
+    "dataset_description": "衛生福利部心快活心理健康學習平台心據點資料，包含心理機構、社區心理衛生中心、精神科醫療機構、精神復健機構、精神護理機構與醫療機構。",
+    "etl_description": "逐一查詢臺北市與新北市行政區心據點 JSON，清理 HTML 文字、去重、保留經緯度，寫入 PostgreSQL 並輸出 Mapbox GeoJSON。",
+    "sensitivity": "public"
+  }
+}
