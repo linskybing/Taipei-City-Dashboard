@@ -71,18 +71,17 @@ DB_MANAGER_DBNAME=your_db_name
 # Qdrant 向量資料庫配置
 QDRANT_URL=http://qdrant:6333
 QDRANT_API_KEY=your_api_key
-QDRANT_COLLECTION_NAME=query_charts
+QDRANT_COLLECTION=query_charts
 ```
 
 ### 可選配置
 
 ```env
-# Python 版本（預設 3.11）
-PYTHON_IMAGE_TAG=3.11
+# Embedding 模型（預設 intfloat/multilingual-e5-base）
+EMBEDDING_MODEL_NAME=intfloat/multilingual-e5-base
 
-# 向量資料輸出路徑（可選）
-VECTOR_OUTPUT_CSV=/data/query_charts_vectors_mapping.csv
-VECTOR_DATA_PATH=./data
+# 批次大小，記憶體不足時可調小
+VECTOR_BATCH_SIZE=16
 ```
 
 ## 資料結構
@@ -121,10 +120,10 @@ VECTOR_DATA_PATH=./data
 
 ## 注意事項
 
-1. **執行時間**: 根據資料量大小，執行時間可能需要數分鐘至數小時
-2. **資源需求**: 建議至少 4GB RAM（模型載入需要約 2GB）
-3. **網路連接**: 首次執行會下載 Sentence Transformer 模型（約 500MB）
-4. **資料覆蓋**: 執行時會刪除並重建 `query_charts` collection
+1. **執行時間**: 根據資料量大小，執行時間可能需要數分鐘至數小時。
+2. **資源需求**: 建議至少 4GB RAM；記憶體不足時調小 `VECTOR_BATCH_SIZE`。
+3. **模型快取**: 首次執行會下載 Sentence Transformer 模型，並快取在 Docker volume `vector_db_upgrade_cache`。
+4. **資料覆蓋**: 執行時會刪除並重建 `QDRANT_COLLECTION` 指定的 collection。
 
 ## 故障排除
 
@@ -150,7 +149,13 @@ curl http://localhost:6333/collections
 
 ### 記憶體不足
 
-在 `docker-compose.yaml` 中調整資源限制：
+先調小 `.env` 中的批次大小：
+
+```env
+VECTOR_BATCH_SIZE=4
+```
+
+若仍不足，再在 `docker-compose.yaml` 中調整資源限制：
 
 ```yaml
 vector-db-upgrade:
@@ -158,6 +163,22 @@ vector-db-upgrade:
     resources:
       limits:
         memory: 6G
+```
+
+### 模型下載卡住
+
+匯入工具會以 `PYTHONUNBUFFERED=1` 輸出即時進度，並預設設定 `HF_HUB_DISABLE_XET=1`。若下載中斷，可保留快取後重跑：
+
+```bash
+docker compose --profile tools rm -f vector-db-upgrade
+docker compose --profile tools up vector-db-upgrade
+```
+
+若快取已損壞，可重建快取 volume 後再跑：
+
+```bash
+docker volume rm vector_db_upgrade_cache
+docker compose --profile tools up vector-db-upgrade
 ```
 
 ### 查看詳細錯誤

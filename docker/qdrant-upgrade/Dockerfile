@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 複製並安裝 Python 依賴
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+ENV PYTHONUNBUFFERED=1 \
+    HF_HUB_DISABLE_XET=1 \
+    TOKENIZERS_PARALLELISM=false
 
 # 複製腳本
 COPY upgrade_vector_db.py .
