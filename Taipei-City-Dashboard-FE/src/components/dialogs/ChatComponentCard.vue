@@ -68,6 +68,14 @@ const detailPath = computed(() =>
 	display: flex;
 	flex-direction: column;
 	gap: 0.55rem;
+	flex: 0 0 auto;
+	min-width: 0;
+	overflow: visible;
+}
+
+.component-card * {
+	min-width: 0;
+	overflow: visible;
 }
 
 .card-topline,
@@ -96,6 +104,7 @@ h3 {
 	color: #ffffff;
 	font-size: 15px;
 	line-height: 1.35;
+	overflow-wrap: anywhere;
 }
 
 dl {
@@ -119,16 +128,14 @@ dd {
 	color: #d8e1eb;
 	text-align: right;
 	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 p {
 	color: #c8d2dc;
 	font-size: 13px;
 	line-height: 1.55;
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+	overflow-wrap: anywhere;
 }
 
 small,
@@ -136,6 +143,7 @@ small,
 	color: #8d99a6;
 	font-size: 12px;
 	line-height: 1.4;
+	overflow-wrap: anywhere;
 }
 
 .card-actions {

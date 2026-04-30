@@ -50,6 +50,7 @@ const isMappedToUpdateBoards = ref(false);
 // Chatroom
 const isChatBtnShow = ref(true);
 const isChatBoxShow = ref(false);
+const hasChatBoxMounted = ref(false);
 // Timers
 let chartTimer = null;
 let crowdingTimer = null;
@@ -162,6 +163,9 @@ function reload3DMRTMapData() {
 // Chatroom 功能顯示隱藏
 function chatbotBtnHandler() {
 	isChatBoxShow.value = !isChatBoxShow.value;
+	if (isChatBoxShow.value) {
+		hasChatBoxMounted.value = true;
+	}
 }
 
 function hideBtnClickHandler() {
@@ -273,7 +277,8 @@ onBeforeUnmount(() => {
     </div>
     <div class="chatbot-container">
       <ChatBox
-        v-if="isChatBoxShow"
+        v-if="hasChatBoxMounted"
+        v-show="isChatBoxShow"
         class="chatbox"
       />
       <div
