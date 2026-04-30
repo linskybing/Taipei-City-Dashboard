@@ -8,7 +8,7 @@ defineProps({
 	chat: { type: Object, required: true },
 });
 
-const emit = defineEmits(["action"]);
+const emit = defineEmits(["action", "show-components"]);
 </script>
 
 <template>
@@ -33,7 +33,10 @@ const emit = defineEmits(["action"]);
           :sources="chat.sources"
           :confidence-notes="chat.confidenceNotes"
         />
-        <ChatRelationTable :relations="chat.relations" />
+        <ChatRelationTable
+          :relations="chat.relations"
+          @show="emit('show-components', $event)"
+        />
         <div
           v-if="chat.button"
           v-horizontal-wheel

@@ -3,81 +3,83 @@ defineProps({
 	relations: { type: Array, default: () => [] },
 });
 
-const cityLabel = (city) => (city === "taipei" ? "臺北" : "雙北");
+const emit = defineEmits(["show"]);
 </script>
 
 <template>
-  <div
+  <section
     v-if="relations.length"
-    v-horizontal-wheel
-    class="relation-area"
+    class="relation-summary"
   >
-    <table class="relation-table">
-      <thead>
-        <tr>
-          <th>排名</th>
-          <th>城市名</th>
-          <th>組件名</th>
-          <th>關聯性</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(item, index) in relations"
-          :key="item.id || index"
-        >
-          <td>{{ index + 1 }}</td>
-          <td>{{ cityLabel(item.city) }}</td>
-          <td>{{ item.name }}</td>
-          <td>{{ item.score }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div>
+      <strong>已整理 {{ Math.min(relations.length, 8) }} 個相關組件</strong>
+      <span>詳細名稱、來源與 component_id 已放在組件參考畫布。</span>
+    </div>
+    <button
+      type="button"
+      @click="emit('show', relations)"
+    >
+      查看畫布
+    </button>
+  </section>
 </template>
 
 <style lang="scss" scoped>
-.relation-area {
+.relation-summary {
 	width: 100%;
 	display: flex;
 	align-items: center;
-	margin: 0.35rem 0;
+	justify-content: space-between;
+	gap: 0.75rem;
 	border: 1px solid #3d4651;
 	border-radius: 8px;
-	overflow-x: auto;
 	background: #151a20;
+	margin: 0.35rem 0;
+	padding: 0.75rem 0.85rem;
 }
 
-.relation-table {
-	min-width: 100%;
-	border-collapse: collapse;
-	font-size: 13px;
-	color: var(--color-normal-text);
+.relation-summary div {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
 }
 
-.relation-table th,
-.relation-table td {
-	border-bottom: 1px solid #2e343b;
-	text-align: left;
-	padding: 0.6rem 0.75rem;
+strong {
+	color: #ffffff;
+	font-size: 14px;
 	line-height: 1.35;
-	vertical-align: middle;
 }
 
-.relation-table tr:last-child td {
-	border-bottom: none;
-}
-
-.relation-table th {
-	font-weight: bold;
+span {
 	color: #aeb7c3;
-	background: #20252b;
-	white-space: nowrap;
+	font-size: 13px;
+	line-height: 1.45;
 }
 
-.relation-table td:first-child,
-.relation-table td:last-child {
-	color: #9fc5ff;
+button {
+	flex-shrink: 0;
+	border: 1px solid #3d4651;
+	border-radius: 8px;
+	background: #20252b;
+	color: #ffffff;
 	font-weight: 700;
+	padding: 0.45rem 0.75rem;
+	cursor: pointer;
+	transition: border-color 0.2s, color 0.2s;
+}
+
+button:hover,
+button:focus-visible {
+	border-color: var(--color-highlight);
+	color: var(--color-highlight);
+	outline: none;
+}
+
+@media (max-width: 520px) {
+	.relation-summary {
+		align-items: stretch;
+		flex-direction: column;
+	}
 }
 </style>

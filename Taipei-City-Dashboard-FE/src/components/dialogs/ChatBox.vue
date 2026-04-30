@@ -2,10 +2,12 @@
 import { nextTick, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import ChatAssistantControls from "./ChatAssistantControls.vue";
+import ChatComponentCanvas from "./ChatComponentCanvas.vue";
 import ChatInputBar from "./ChatInputBar.vue";
 import ChatMessage from "./ChatMessage.vue";
 import ChatStickyNotice from "./ChatStickyNotice.vue";
 import ChatWindowHeader from "./ChatWindowHeader.vue";
+import { useChatComponentCanvas } from "./useChatComponentCanvas";
 import { useAuthStore } from "../../store/authStore";
 import { useChatStore } from "../../store/chatStore";
 import { useContentStore } from "../../store/contentStore";
@@ -31,6 +33,8 @@ const dashboardCreationLoading = ref(false);
 const selectedTheme = ref(chatSettings.value.theme);
 const selectedCity = ref(chatSettings.value.city);
 const selectedAudience = ref(chatSettings.value.audience);
+const { isCanvasOpen, canvasRelations, canvasItems, openCanvas, closeCanvas } =
+	useChatComponentCanvas(chatData);
 
 const qaBtnHandler = async (text, relations) => {
 	if (text !== "建立儀表板" || dashboardCreationLoading.value) return;
@@ -100,95 +104,53 @@ watch([selectedTheme, selectedCity, selectedAudience], () => {
 
 <template>
   <div
-    class="chat-widget"
-    :class="{ 'is-standalone': standalone }"
+    class="chat-layout"
+    :class="{
+      'is-standalone': standalone,
+      'has-canvas': isCanvasOpen && canvasItems.length,
+    }"
   >
-    <ChatWindowHeader
-      :standalone="standalone"
-    />
     <div
-      ref="chatAreaRef"
-      class="chat-area scrollbar-custom"
+      class="chat-widget"
+      :class="{ 'is-standalone': standalone }"
     >
-      <ChatStickyNotice
-        :open="isStickyOpen"
-        @toggle="toggleSticky"
+      <ChatWindowHeader
+        :standalone="standalone"
       />
-      <ChatMessage
-        v-for="chat in chatData"
-        :key="chat.id"
-        :chat="chat"
-        @action="qaBtnHandler"
+      <div
+        ref="chatAreaRef"
+        class="chat-area scrollbar-custom"
+      >
+        <ChatStickyNotice
+          :open="isStickyOpen"
+          @toggle="toggleSticky"
+        />
+        <ChatMessage
+          v-for="chat in chatData"
+          :key="chat.id"
+          :chat="chat"
+          @action="qaBtnHandler"
+          @show-components="openCanvas"
+        />
+      </div>
+      <ChatAssistantControls
+        v-model:theme="selectedTheme"
+        v-model:city="selectedCity"
+        v-model:audience="selectedAudience"
+      />
+      <ChatInputBar
+        v-model="userMessage"
+        @send="sendBtnHandler"
       />
     </div>
-    <ChatAssistantControls
-      v-model:theme="selectedTheme"
-      v-model:city="selectedCity"
-      v-model:audience="selectedAudience"
-    />
-    <ChatInputBar
-      v-model="userMessage"
-      @send="sendBtnHandler"
+    <ChatComponentCanvas
+      :open="isCanvasOpen"
+      :items="canvasItems"
+      :creating="dashboardCreationLoading"
+      @close="closeCanvas"
+      @create-dashboard="qaBtnHandler('建立儀表板', canvasRelations)"
     />
   </div>
 </template>
 
-<style lang="scss" scoped>
-.scrollbar-custom {
-	&::-webkit-scrollbar {
-		width: 6px;
-		background: transparent;
-	}
-
-	&::-webkit-scrollbar-thumb {
-		background: #4b5563;
-		border-radius: 8px;
-	}
-
-	&::-webkit-scrollbar-thumb:hover {
-		background: #6b7280;
-	}
-}
-
-.chat-widget {
-	width: 100%;
-	height: 100%;
-	border-radius: 12px;
-	overflow: hidden;
-	background: #0b0d0f;
-	border: 1px solid #34383d;
-	box-shadow: 0 18px 48px rgb(0 0 0 / 45%);
-	display: flex;
-	flex-direction: column;
-	transition: width 0.2s ease, height 0.2s ease;
-}
-
-.chat-widget.chatbox.chatbox {
-	width: min(760px, calc(100vw - 8rem));
-	height: min(760px, calc(100vh - 8rem));
-	height: min(760px, calc(var(--vh) * 100 - 8rem));
-}
-
-.chat-widget.is-standalone {
-	border-radius: 10px;
-}
-
-.chat-area {
-	flex: 1;
-	padding: 1rem 1.125rem;
-	overflow-y: auto;
-	background: #0b0d0f;
-}
-
-@media (max-width: 760px) {
-	.chat-widget.chatbox.chatbox {
-		width: calc(100vw - 1rem);
-		height: calc(100vh - 1rem);
-		height: calc(var(--vh) * 100 - 1rem);
-	}
-
-	.chat-area {
-		padding: 0.75rem;
-	}
-}
-</style>
+<style lang="scss" scoped src="./ChatBoxLayout.scss"></style>

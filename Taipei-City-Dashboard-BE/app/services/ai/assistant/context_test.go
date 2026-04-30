@@ -67,6 +67,29 @@ func TestApplyContextIncludesStatRouting(t *testing.T) {
 	}
 }
 
+func TestApplyContextPrioritizesComponentSearchIntent(t *testing.T) {
+	ctx, err := NewContext("disaster", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "想看防災相關組件"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"查看組件",
+		"推薦組件",
+		"想看某議題資料",
+		"優先呼叫 search_components",
+		"再呼叫 get_component_snapshot",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+}
+
 func firstTextPart(msg llms.MessageContent) string {
 	for _, part := range msg.Parts {
 		text, ok := part.(llms.TextContent)
