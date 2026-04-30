@@ -14,8 +14,10 @@ import (
 
 var (
 	// aiSemaphore limits the number of concurrent AI requests
-	aiSemaphore *semaphore.Weighted
-	twccModel   llms.Model
+	aiSemaphore          *semaphore.Weighted
+	twccModel            llms.Model
+	loadRecentAIChatLogs = models.GetRecentAIChatLogs
+	createAIChatLog      = models.CreateAIChatLog
 )
 
 func init() {
@@ -43,11 +45,11 @@ func ChatWithTWCC(ctx context.Context, req AIChatRequest, options ...llms.CallOp
 	}
 	defer aiSemaphore.Release(1)
 
-	session := newSession(req, options...)
+	session := newSession(ctx, req, options...)
 	return session.run(ctx)
 }
 
-func newSession(req AIChatRequest, options ...llms.CallOption) *aiSession {
+func newSession(ctx context.Context, req AIChatRequest, options ...llms.CallOption) *aiSession {
 	s := &aiSession{
 		req:             req,
 		options:         options,
@@ -59,6 +61,6 @@ func newSession(req AIChatRequest, options ...llms.CallOption) *aiSession {
 	}
 	s.allowedTools = allowedToolMap(s.callOpts.Tools)
 	s.injectInstructions()
-	s.injectMemory()
+	s.injectMemory(ctx)
 	return s
 }

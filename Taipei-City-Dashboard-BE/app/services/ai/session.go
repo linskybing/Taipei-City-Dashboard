@@ -26,6 +26,7 @@ type aiSession struct {
 	toolResults     []string
 	toolEvents      []assistant.ToolEvent
 	allowedTools    map[string]bool
+	memoryStats     memoryStats
 	lastResp        *llms.ContentResponse
 	lastErr         error
 	startTime       time.Time
@@ -56,7 +57,7 @@ func (s *aiSession) run(ctx context.Context) (*models.AIChatLog, error) {
 			break
 		}
 	}
-	return s.finalize()
+	return s.finalize(ctx)
 }
 
 func (s *aiSession) sendHeartbeat(ctx context.Context) {

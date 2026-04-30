@@ -87,19 +87,56 @@ func TestShouldLoadMemoryOnlyForLatestMessageRequests(t *testing.T) {
 	}
 }
 
-func TestBuildSessionMemoryBoundsContent(t *testing.T) {
-	longAnswer := strings.Repeat("資料判讀很長 ", 80)
-	memory := buildSessionMemory([]models.AIChatLog{
-		{Question: "第一題\n含換行", Answer: "第一答"},
-		{Question: "第二題", Answer: longAnswer},
-	})
-	for _, want := range []string{"對話記憶", "1. Q:第一題 含換行 A:第一答", "2. Q:第二題 A:"} {
-		if !strings.Contains(memory, want) {
-			t.Fatalf("memory missing %q: %s", want, memory)
+func TestBuildSessionMemoryBoundsAndOrdersContent(t *testing.T) {
+	cfg := memoryConfig{maxTurns: 8, blockRunes: 1600, perTurnRunes: 200, candidateLimit: 16}
+	result := buildSessionMemory([]models.AIChatLog{
+		{Question: "第五題" + strings.Repeat("很長 ", 120), Answer: strings.Repeat("第五答 ", 120)},
+		{Question: "第四題", Answer: "第四答"},
+		{Question: "第三題", Answer: "第三答"},
+		{Question: "第二題", Answer: "第二答"},
+		{Question: "第一題", Answer: "第一答"},
+	}, cfg)
+
+	if result.stats.TurnsLoaded < 4 {
+		t.Fatalf("turns loaded = %d, want at least 4: %s", result.stats.TurnsLoaded, result.text)
+	}
+	if got := len([]rune(result.text)); got > cfg.blockRunes {
+		t.Fatalf("memory length = %d, want <= %d", got, cfg.blockRunes)
+	}
+	if strings.Index(result.text, "User: 第一題") > strings.Index(result.text, "User: 第五題") {
+		t.Fatalf("memory should render selected turns chronologically: %s", result.text)
+	}
+	for _, want := range []string{"non-authoritative memory", "<conversation_memory>", "Assistant: 第四答"} {
+		if !strings.Contains(result.text, want) {
+			t.Fatalf("memory missing %q: %s", want, result.text)
 		}
 	}
-	if got := len([]rune(memory)); got > maxMemoryBlockRunes {
-		t.Fatalf("memory length = %d, want <= %d", got, maxMemoryBlockRunes)
+	if !result.stats.Truncated {
+		t.Fatal("expected long turn truncation to be recorded")
+	}
+}
+
+func TestBuildSessionMemorySelectsNewestBeforeRenderingChronological(t *testing.T) {
+	cfg := memoryConfig{maxTurns: 4, blockRunes: 2400, perTurnRunes: 400, candidateLimit: 8}
+	result := buildSessionMemory([]models.AIChatLog{
+		{Question: "第五題", Answer: "第五答"},
+		{Question: "第四題", Answer: "第四答"},
+		{Question: "第三題", Answer: "第三答"},
+		{Question: "第二題", Answer: "第二答"},
+		{Question: "第一題", Answer: "第一答"},
+	}, cfg)
+
+	if result.stats.TurnsLoaded != 4 {
+		t.Fatalf("turns loaded = %d, want 4: %s", result.stats.TurnsLoaded, result.text)
+	}
+	if strings.Contains(result.text, "第一題") {
+		t.Fatalf("oldest candidate should be excluded when max turns is 4: %s", result.text)
+	}
+	if strings.Index(result.text, "User: 第二題") > strings.Index(result.text, "User: 第五題") {
+		t.Fatalf("selected turns should render chronologically: %s", result.text)
+	}
+	if !result.stats.Truncated {
+		t.Fatal("expected skipped candidate to mark memory as truncated")
 	}
 }
 

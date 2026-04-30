@@ -46,15 +46,17 @@ type LMConfig struct {
 }
 
 type TWCCConfig struct {
-	ApiUrl          string
-	ApiKey          string
-	Model           string
-	Timeout         int
-	MaxRetry        int
-	MaxConcurrent   int
-	ToolTimeout     int
-	MaxToolLoops    int
-	MaxToolArgBytes int
+	ApiUrl           string
+	ApiKey           string
+	Model            string
+	Timeout          int
+	MaxRetry         int
+	MaxConcurrent    int
+	ToolTimeout      int
+	MaxToolLoops     int
+	MaxToolArgBytes  int
+	MemoryTurns      int
+	MemoryBlockRunes int
 }
 
 var (
@@ -117,15 +119,17 @@ var (
 	}
 
 	TWCC = TWCCConfig{
-		ApiUrl:          getEnv("TWCC_API_URL", "https://api-ams.twcc.ai/api"),
-		ApiKey:          getEnv("TWCC_API_KEY", ""),
-		Model:           getEnv("TWCC_MODEL", "llama3.3-ffm-70b-16k-chat"),
-		Timeout:         getIntEnv("TWCC_TIMEOUT", 60),
-		MaxRetry:        getIntEnv("TWCC_MAX_RETRY", 2),
-		MaxConcurrent:   getIntEnv("TWCC_MAX_CONCURRENT", 10),
-		ToolTimeout:     getIntEnv("TWCC_TOOL_TIMEOUT", 8),
-		MaxToolLoops:    getIntEnv("TWCC_MAX_TOOL_LOOPS", 5),
-		MaxToolArgBytes: getIntEnv("TWCC_MAX_TOOL_ARG_BYTES", 4096),
+		ApiUrl:           getEnv("TWCC_API_URL", "https://api-ams.twcc.ai/api"),
+		ApiKey:           getEnv("TWCC_API_KEY", ""),
+		Model:            getEnv("TWCC_MODEL", "llama3.3-ffm-70b-16k-chat"),
+		Timeout:          getIntEnv("TWCC_TIMEOUT", 60),
+		MaxRetry:         getIntEnv("TWCC_MAX_RETRY", 2),
+		MaxConcurrent:    getIntEnv("TWCC_MAX_CONCURRENT", 10),
+		ToolTimeout:      getIntEnv("TWCC_TOOL_TIMEOUT", 8),
+		MaxToolLoops:     getIntEnv("TWCC_MAX_TOOL_LOOPS", 5),
+		MaxToolArgBytes:  getIntEnv("TWCC_MAX_TOOL_ARG_BYTES", 4096),
+		MemoryTurns:      getBoundedIntEnv("TWCC_MEMORY_TURNS", 8, 4, 12),
+		MemoryBlockRunes: getBoundedIntEnv("TWCC_MEMORY_BLOCK_RUNES", 1600, 900, 2400),
 	}
 
 	LMSession   *ort.DynamicSession[int64, float32]
@@ -153,4 +157,15 @@ func getIntEnv(key string, fallback int) int {
 		return value
 	}
 	return fallback
+}
+
+func getBoundedIntEnv(key string, fallback, minValue, maxValue int) int {
+	value := getIntEnv(key, fallback)
+	if value < minValue {
+		return minValue
+	}
+	if value > maxValue {
+		return maxValue
+	}
+	return value
 }

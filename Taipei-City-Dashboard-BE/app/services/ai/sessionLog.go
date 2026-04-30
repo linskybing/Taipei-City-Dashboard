@@ -5,13 +5,14 @@ import (
 	"TaipeiCityDashboardBE/app/services/ai/assistant"
 	"TaipeiCityDashboardBE/global"
 	"TaipeiCityDashboardBE/logs"
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/tmc/langchaingo/llms"
 )
 
-func (s *aiSession) finalize() (*models.AIChatLog, error) {
+func (s *aiSession) finalize(ctx context.Context) (*models.AIChatLog, error) {
 	log := &models.AIChatLog{
 		SessionID:    s.req.SessionID,
 		UserID:       s.req.UserID,
@@ -22,7 +23,7 @@ func (s *aiSession) finalize() (*models.AIChatLog, error) {
 		Status:       "success",
 		Tools:        "[]",
 		CreatedAt:    s.startTime,
-		Metadata:     assistant.BuildMetadata(s.req.Params, s.executedTools, s.toolResults, s.toolEvents),
+		Metadata:     assistant.BuildMetadata(s.metadataParams(), s.executedTools, s.toolResults, s.toolEvents),
 		InputTokens:  s.totalInput,
 		OutputTokens: s.totalOutput,
 		TotalTokens:  s.totalInput + s.totalOutput,
@@ -34,7 +35,7 @@ func (s *aiSession) finalize() (*models.AIChatLog, error) {
 		log.Status = "error"
 		log.ErrorCode = "MODEL_ERROR"
 		log.ErrorMessage = s.lastErr.Error()
-		models.CreateAIChatLog(log)
+		createAIChatLog(ctx, log)
 		return log, s.lastErr
 	}
 	if s.lastResp != nil && len(s.lastResp.Choices) > 0 {
@@ -46,7 +47,7 @@ func (s *aiSession) finalize() (*models.AIChatLog, error) {
 			}
 		}
 	}
-	if err := models.CreateAIChatLog(log); err != nil {
+	if err := createAIChatLog(ctx, log); err != nil {
 		logs.FError("DB Log Error: %v", err)
 	}
 	return log, nil

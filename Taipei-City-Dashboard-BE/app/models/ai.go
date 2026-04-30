@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"time"
 )
 
@@ -33,27 +34,25 @@ func (AIChatLog) TableName() string {
 }
 
 // CreateAIChatLog inserts a new AI chat log into the database.
-func CreateAIChatLog(log *AIChatLog) error {
-	return DBManager.Create(log).Error
+func CreateAIChatLog(ctx context.Context, log *AIChatLog) error {
+	return DBManager.WithContext(ctx).Create(log).Error
 }
 
-func GetRecentAIChatLogs(sessionID string, userID string, limit int) ([]AIChatLog, error) {
+func GetRecentAIChatLogs(ctx context.Context, sessionID string, userID string, limit int) ([]AIChatLog, error) {
 	if DBManager == nil || sessionID == "" || userID == "" || limit <= 0 {
 		return nil, nil
 	}
 	var logs []AIChatLog
 	err := DBManager.
+		WithContext(ctx).
 		Where("session_id = ? AND user_id = ? AND status = ?", sessionID, userID, "success").
 		Where("question <> '' OR answer <> ''").
-		Order("created_at DESC").
+		Order("created_at DESC, id DESC").
 		Limit(limit).
 		Find(&logs).
 		Error
 	if err != nil {
 		return nil, err
-	}
-	for left, right := 0, len(logs)-1; left < right; left, right = left+1, right-1 {
-		logs[left], logs[right] = logs[right], logs[left]
 	}
 	return logs, nil
 }
