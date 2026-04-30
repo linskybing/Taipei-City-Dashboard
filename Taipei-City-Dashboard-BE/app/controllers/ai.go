@@ -99,6 +99,8 @@ func ChatWithTWCC(c *gin.Context) {
 		return
 	}
 	extras := assistant.ResponseExtrasFromMetadata(logEntry.Metadata)
+	auditRef := fmt.Sprintf("ai_chatlog:%d", logEntry.ID)
+	visualizationRefs := assistant.BuildVisualizationRefs(extras, auditRef)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
@@ -119,6 +121,8 @@ func ChatWithTWCC(c *gin.Context) {
 			"recommended_actions": extras.RecommendedActions,
 			"confidence_notes":    extras.ConfidenceNotes,
 			"analysis_cards":      extras.AnalysisCards,
+			"visualization_refs":  visualizationRefs,
+			"audit_ref":           auditRef,
 		},
 	})
 }

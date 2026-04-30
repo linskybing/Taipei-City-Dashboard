@@ -52,6 +52,45 @@ func TestFrontendDoesNotContainTWCCProviderAccess(t *testing.T) {
 	}
 }
 
+func TestRuntimeCodeDoesNotDirectlyCallOpenDataAPIs(t *testing.T) {
+	repoRoot := filepath.Dir(backendRoot(t))
+	runtimeRoots := []string{
+		filepath.Join(repoRoot, "Taipei-City-Dashboard-BE", "app"),
+		filepath.Join(repoRoot, "Taipei-City-Dashboard-FE", "src"),
+	}
+	banned := []string{
+		"data.taipei/api",
+		"api/frontstage/tpeod",
+		"scope=resourceAquire",
+		"resource.download?rid=",
+		"data.ntpc.gov.tw/api",
+		"tdx.transportdata.tw/api/basic",
+		"tdx.transportdata.tw/api/advanced",
+	}
+
+	for _, root := range runtimeRoots {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !isRuntimeSource(path) {
+				return err
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			content := string(data)
+			for _, token := range banned {
+				if strings.Contains(content, token) {
+					t.Fatalf("runtime file %s directly references open-data API token %q; ingest external data through Airflow Data-End DAGs instead", path, token)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("walk runtime root %s: %v", root, err)
+		}
+	}
+}
+
 func backendRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
@@ -59,6 +98,15 @@ func backendRoot(t *testing.T) string {
 		t.Fatal("cannot resolve test file path")
 	}
 	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+}
+
+func isRuntimeSource(path string) bool {
+	switch filepath.Ext(path) {
+	case ".go", ".js", ".vue", ".ts":
+		return true
+	default:
+		return false
+	}
 }
 
 func assertFileContains(t *testing.T, path string, token string) {

@@ -90,6 +90,30 @@ func TestApplyContextPrioritizesComponentSearchIntent(t *testing.T) {
 	}
 }
 
+func TestApplyContextRequiresOpenDataThroughAirflow(t *testing.T) {
+	ctx, err := NewContext("commuting", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請加入新的開放資料 API 做捷運異常分析"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"Data-End Airflow DAG",
+		"PostgreSQL",
+		"不得建議或執行前端、後端工具直接串接",
+		"CommonDag ETL",
+		"job_config metadata",
+		"component query",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+}
+
 func firstTextPart(msg llms.MessageContent) string {
 	for _, part := range msg.Parts {
 		text, ok := part.(llms.TextContent)

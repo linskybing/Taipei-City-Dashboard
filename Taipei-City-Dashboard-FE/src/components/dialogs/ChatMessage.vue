@@ -3,6 +3,7 @@ import BotLogo from "../icons/BotLogo.vue";
 import UserLogo from "../icons/UserLogo.vue";
 import ChatAssistantDetails from "./ChatAssistantDetails.vue";
 import ChatRelationTable from "./ChatRelationTable.vue";
+import ChatVisualizationRefs from "./ChatVisualizationRefs.vue";
 
 defineProps({
 	chat: { type: Object, required: true },
@@ -33,6 +34,7 @@ const emit = defineEmits(["action", "show-components"]);
           :sources="chat.sources"
           :confidence-notes="chat.confidenceNotes"
         />
+        <ChatVisualizationRefs :items="chat.visualizations" />
         <ChatRelationTable
           :relations="chat.relations"
           @show="emit('show-components', $event)"

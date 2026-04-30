@@ -122,6 +122,7 @@ function buildAssistantMessage(data = {}) {
 		actions: data.recommended_actions || [],
 		confidenceNotes: data.confidence_notes || [],
 		analysisCards: data.analysis_cards || [],
+		visualizations: data.visualization_refs || [],
 		button: relations.length > 0 ? [{ id: 1, text: "建立儀表板" }] : null,
 	};
 }

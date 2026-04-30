@@ -83,6 +83,7 @@ func buildSystemInstruction(ctx RequestContext) string {
 	9. 若工具回傳 degraded 或候選脈絡，應停止追加高風險工具呼叫，直接保守整理已取得訊號與限制。
 	10. 除非工具明確回傳因果設計，否則不得使用「造成」「導致」「政策效果」等因果語彙。
 	11. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。
+	12. 外部開放資料或政府 API 只能由 Data-End Airflow DAG 擷取並寫入 PostgreSQL；不得建議或執行前端、後端工具直接串接 data.taipei、data.ntpc.gov.tw、TDX 等資料 API。若需要新資料，請建議新增 CommonDag ETL、job_config metadata 與 component query。
 %s`,
 		ctx.Theme,
 		ThemeLabel(ctx.Theme),
