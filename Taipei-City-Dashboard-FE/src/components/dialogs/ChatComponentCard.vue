@@ -49,12 +49,12 @@ const detailPath = computed(() =>
     <small>{{ source }}</small>
     <div class="card-actions">
       <span v-if="item.failed">使用 AI 關聯資料顯示</span>
-      <RouterLink
+      <a
         v-if="detailPath"
-        :to="detailPath"
+        :href="detailPath"
       >
         查看詳情
-      </RouterLink>
+      </a>
     </div>
   </article>
 </template>
