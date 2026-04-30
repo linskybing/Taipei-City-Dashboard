@@ -30,6 +30,7 @@ const audienceOptions = [
   <div class="assistant-controls">
     <select
       :value="theme"
+      aria-label="選擇主題"
       @change="emit('update:theme', $event.target.value)"
     >
       <option
@@ -42,6 +43,7 @@ const audienceOptions = [
     </select>
     <select
       :value="city"
+      aria-label="選擇城市範圍"
       @change="emit('update:city', $event.target.value)"
     >
       <option
@@ -54,6 +56,7 @@ const audienceOptions = [
     </select>
     <select
       :value="audience"
+      aria-label="選擇受眾"
       @change="emit('update:audience', $event.target.value)"
     >
       <option
@@ -72,17 +75,27 @@ const audienceOptions = [
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	gap: 0.5rem;
-	padding: 0.75rem 1.125rem 0;
-	background: #494b4e;
+	padding: 0.8rem 1rem 0;
+	background: #151719;
 
 	select {
 		min-width: 0;
-		height: 32px;
+		height: 36px;
 		border-radius: 8px;
-		border: 1px solid #888787;
-		background: #282a2c;
-		color: #ffffff;
-		padding: 0 8px;
+		border: 1px solid #3d4651;
+		background: #20252b;
+		color: var(--color-normal-text);
+		padding: 0 0.7rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: border-color 0.2s, background 0.2s;
+	}
+
+	select:hover,
+	select:focus-visible {
+		border-color: var(--color-highlight);
+		background: #252b33;
+		outline: none;
 	}
 }
 </style>

@@ -1,6 +1,7 @@
 import { ref, watch } from "vue";
 import { defineStore } from "pinia";
 import http from "../router/axios";
+import { useAuthStore } from "./authStore";
 
 const defaultChatData = [
 	{
@@ -8,7 +9,7 @@ const defaultChatData = [
 		role: "bot",
 		isDefault: true,
 		content:
-			"您好，我是臺北城市儀表板 AI 決策助理。請輸入想分析的城市議題，我會依六大黑客松主題檢索儀表板組件、整理資料來源，並提供可執行建議。",
+			"您好，我是臺北城市儀表板 AI 決策助理。請輸入城市議題或 component_id，我會檢索儀表板組件；若要求資料品質、描述統計、趨勢、季節、異常、檢定或預測，會使用對應統計工具整理分析。",
 	},
 ];
 
@@ -23,6 +24,7 @@ export const useChatStore = defineStore("chat", () => {
 	const savedChatData = JSON.parse(sessionStorage.getItem("chatData")) || [];
 	const chatData = ref([...defaultChatData, ...savedChatData]);
 	const chatSettings = ref({ ...defaultSettings });
+	const authStore = useAuthStore();
 
 	watch(
 		chatData,
@@ -47,6 +49,16 @@ export const useChatStore = defineStore("chat", () => {
 		const mergedSettings = { ...chatSettings.value, ...settings };
 		setChatSettings(mergedSettings);
 		addChatData({ role: "user", content: newChatData.content });
+
+		if (!authStore.token && !localStorage.getItem("token")) {
+			addChatData({
+				role: "bot",
+				content: "請先登入會員後再使用 AI 決策助理。",
+				error: true,
+			});
+			return;
+		}
+
 		const loadingId = addChatData({ role: "bot", content: "正在整理儀表板訊號與資料來源..." });
 
 		try {
@@ -64,7 +76,7 @@ export const useChatStore = defineStore("chat", () => {
 			console.error("AIChatError:", error);
 			updateBotMessage(loadingId, {
 				role: "bot",
-				content: "目前無法取得 AI 決策助理回覆，請稍後再試或改以更具體的議題描述查詢。",
+				content: buildAssistantErrorMessage(error),
 				error: true,
 			});
 		}
@@ -109,8 +121,17 @@ function buildAssistantMessage(data = {}) {
 		sources: data.sources || [],
 		actions: data.recommended_actions || [],
 		confidenceNotes: data.confidence_notes || [],
+		analysisCards: data.analysis_cards || [],
 		button: relations.length > 0 ? [{ id: 1, text: "建立儀表板" }] : null,
 	};
+}
+
+function buildAssistantErrorMessage(error) {
+	const status = error?.response?.status;
+	if (status === 401 || status === 403) {
+		return "登入狀態已失效，請重新登入後再使用 AI 決策助理。";
+	}
+	return "目前無法取得 AI 決策助理回覆，請稍後再試或改以更具體的議題描述查詢。";
 }
 
 function getSessionID() {

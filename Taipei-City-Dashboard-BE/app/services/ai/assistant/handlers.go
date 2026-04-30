@@ -50,7 +50,7 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 
 	results, err := models.GetComponentByQueryVector(query, limit*2, score)
 	if err != nil {
-		return unavailableTool("search_components", err)
+		return buildSearchComponentsFallback(query, req.City, limit)
 	}
 	related := filterComponents(results, req.City, limit)
 	return marshalTool(toolEnvelope{
@@ -146,7 +146,7 @@ func GetDashboardContext(ctx context.Context, args string) (string, error) {
 	}
 	components, err := getDashboardComponents(req.DashboardIndex, req.City, 8)
 	if err != nil {
-		return unavailableTool("get_dashboard_context", err)
+		return buildDashboardContextFallback(req)
 	}
 	related, sources := summarizeComponents(components)
 	return marshalTool(toolEnvelope{

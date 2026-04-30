@@ -29,6 +29,7 @@ const emit = defineEmits(["action"]);
         </div>
         <ChatAssistantDetails
           :actions="chat.actions"
+          :analysis-cards="chat.analysisCards"
           :sources="chat.sources"
           :confidence-notes="chat.confidenceNotes"
         />
@@ -77,13 +78,13 @@ const emit = defineEmits(["action"]);
 }
 
 .message {
-	padding: 8px;
+	padding: 0.45rem 0;
 }
 
 .bot,
 .user {
 	display: flex;
-	gap: 0.5rem;
+	gap: 0.7rem;
 	align-items: flex-start;
 }
 
@@ -92,8 +93,11 @@ const emit = defineEmits(["action"]);
 }
 
 .avatar {
-	width: 40px;
-	height: 40px;
+	width: 34px;
+	height: 34px;
+	border: 1px solid #3d4651;
+	border-radius: 8px;
+	background: #20252b;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -101,7 +105,7 @@ const emit = defineEmits(["action"]);
 }
 
 .avatar svg {
-	width: 100%;
+	width: 24px;
 	height: auto;
 }
 
@@ -111,18 +115,37 @@ const emit = defineEmits(["action"]);
 	gap: 0.5rem;
 }
 
+.bot .content {
+	flex: 1;
+	min-width: 0;
+}
+
+.user .content {
+	max-width: min(70%, 720px);
+}
+
 .message--bubble {
-	border: 1px solid #ffffff;
-	border-radius: 10px;
-	background: #282a2c;
-	color: #ffffff;
+	border: 1px solid #3d4651;
+	border-radius: 8px;
+	background: #20252b;
+	color: var(--color-normal-text);
 }
 
 .message--bubble p {
 	white-space: pre-line;
 	margin: 0;
-	padding: 8px 16px;
-	font-size: 16px;
+	padding: 0.75rem 0.9rem;
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+.user .message--bubble {
+	border-color: #2d6fd2;
+	background: #163d75;
+}
+
+.user .message--bubble p {
+	color: #ffffff;
 }
 
 .message--button {
@@ -133,17 +156,21 @@ const emit = defineEmits(["action"]);
 
 .message--button button {
 	flex-shrink: 0;
-	background: #494b4e;
+	border: 1px solid #3d4651;
+	background: #20252b;
 	color: #ffffff;
 	font-size: 14px;
 	padding: 0.5rem 1rem;
-	border-radius: 15px;
-	border: none;
+	border-radius: 8px;
 	cursor: pointer;
 	white-space: nowrap;
+	transition: border-color 0.2s, color 0.2s;
 }
 
-.message--button button:hover {
-	filter: brightness(0.5);
+.message--button button:hover,
+.message--button button:focus-visible {
+	border-color: var(--color-highlight);
+	color: var(--color-highlight);
+	outline: none;
 }
 </style>

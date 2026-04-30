@@ -5,10 +5,15 @@ import ChatAssistantControls from "./ChatAssistantControls.vue";
 import ChatInputBar from "./ChatInputBar.vue";
 import ChatMessage from "./ChatMessage.vue";
 import ChatStickyNotice from "./ChatStickyNotice.vue";
+import ChatWindowHeader from "./ChatWindowHeader.vue";
 import { useAuthStore } from "../../store/authStore";
 import { useChatStore } from "../../store/chatStore";
 import { useContentStore } from "../../store/contentStore";
 import http from "../../router/axios";
+
+defineProps({
+	standalone: { type: Boolean, default: false },
+});
 
 const chatStore = useChatStore();
 const contentStore = useContentStore();
@@ -94,10 +99,13 @@ watch([selectedTheme, selectedCity, selectedAudience], () => {
 </script>
 
 <template>
-  <div class="chat-widget">
-    <div class="header">
-      <h3>臺北城市儀表板決策助理</h3>
-    </div>
+  <div
+    class="chat-widget"
+    :class="{ 'is-standalone': standalone }"
+  >
+    <ChatWindowHeader
+      :standalone="standalone"
+    />
     <div
       ref="chatAreaRef"
       class="chat-area scrollbar-custom"
@@ -128,49 +136,59 @@ watch([selectedTheme, selectedCity, selectedAudience], () => {
 <style lang="scss" scoped>
 .scrollbar-custom {
 	&::-webkit-scrollbar {
-		width: 2px;
+		width: 6px;
 		background: transparent;
 	}
 
 	&::-webkit-scrollbar-thumb {
-		background: #ffffff;
+		background: #4b5563;
 		border-radius: 8px;
 	}
 
 	&::-webkit-scrollbar-thumb:hover {
-		background: #ababab;
+		background: #6b7280;
 	}
 }
 
 .chat-widget {
-	width: 400px;
-	border-radius: 20px;
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
 	overflow: hidden;
-	background: #090909;
-	border: 1px solid #888787;
+	background: #0b0d0f;
+	border: 1px solid #34383d;
+	box-shadow: 0 18px 48px rgb(0 0 0 / 45%);
 	display: flex;
 	flex-direction: column;
+	transition: width 0.2s ease, height 0.2s ease;
 }
 
-.header {
-	padding: 1rem;
-	background: #494b4e;
-	border-bottom: 3px solid #888787;
+.chat-widget.chatbox.chatbox {
+	width: min(760px, calc(100vw - 8rem));
+	height: min(760px, calc(100vh - 8rem));
+	height: min(760px, calc(var(--vh) * 100 - 8rem));
 }
 
-.header h3 {
-	font-size: 18px;
-	font-weight: 700;
-	color: #ffffff;
-	margin: 0;
+.chat-widget.is-standalone {
+	border-radius: 10px;
 }
 
 .chat-area {
 	flex: 1;
-	margin: 0.25rem;
-	padding: 0.75rem;
+	padding: 1rem 1.125rem;
 	overflow-y: auto;
-	background: #090909;
+	background: #0b0d0f;
 }
 
+@media (max-width: 760px) {
+	.chat-widget.chatbox.chatbox {
+		width: calc(100vw - 1rem);
+		height: calc(100vh - 1rem);
+		height: calc(var(--vh) * 100 - 1rem);
+	}
+
+	.chat-area {
+		padding: 0.75rem;
+	}
+}
 </style>

@@ -20,10 +20,7 @@ import ComponentInfoView from "../views/ComponentInfoView.vue";
 import EmbedView from "../views/EmbedView.vue";
 
 const routes = [
-	{
-		path: "/",
-		redirect: "/dashboard",
-	},
+	{ path: "/", redirect: "/dashboard" },
 	{
 		path: "/callback",
 		name: "callback",
@@ -40,6 +37,11 @@ const routes = [
 		component: MapView,
 	},
 	{
+		path: "/chat",
+		name: "chat",
+		component: () => import("../views/ChatView.vue"),
+	},
+	{
 		path: "/component",
 		name: "component",
 		component: ComponentView,
@@ -54,14 +56,8 @@ const routes = [
 		name: "embed",
 		component: EmbedView,
 	},
-	{
-		path: "/embed",
-		redirect: "/embed/0",
-	},
-	{
-		path: "/admin",
-		redirect: "/admin/dashboard?city=taipei",
-	},
+	{ path: "/embed", redirect: "/embed/0" },
+	{ path: "/admin", redirect: "/admin/dashboard?city=taipei" },
 	{
 		path: "/admin/user",
 		name: "admin-user",
@@ -92,11 +88,7 @@ const routes = [
 		name: "admin-disaster",
 		component: () => import("../views/admin/AdminDisaster.vue"),
 	},
-	{
-		path: "/:pathMatch(.*)*",
-		name: "notFoundRedirect",
-		redirect: "/dashboard",
-	},
+	{ path: "/:pathMatch(.*)*", name: "notFoundRedirect", redirect: "/dashboard" },
 ];
 
 const router = createRouter({
@@ -121,7 +113,7 @@ router.beforeEach((to) => {
 	const authStore = useAuthStore();
 	if (authStore.isMobileDevice && authStore.isNarrowDevice) {
 		if (
-			!["dashboard", "component-info", "callback", "embed", "mapview"].includes(
+			!["dashboard", "component-info", "callback", "embed", "mapview", "chat"].includes(
 				to.name
 			)
 		) {

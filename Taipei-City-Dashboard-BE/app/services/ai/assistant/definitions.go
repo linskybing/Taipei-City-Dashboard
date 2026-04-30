@@ -19,8 +19,8 @@ func ToolDefinitions() []llms.Tool {
 			"component_id":    integerSchema("Component numeric ID."),
 			"component_index": stringSchema("Component English index if known."),
 		}, []string{}),
-		defineTool("get_dashboard_context", "Get component context for a dashboard index.", map[string]interface{}{
-			"dashboard_index": stringSchema("Dashboard index."),
+		defineTool("get_dashboard_context", "Get component context for a known dashboard index. Do not pass natural-language titles unless no exact index is available.", map[string]interface{}{
+			"dashboard_index": stringSchema("Exact dashboard index, such as ltc_care_tpe or practical_transportation_newtpe."),
 			"city":            enumSchema(validCityValues(), "City scope."),
 		}, []string{"dashboard_index"}),
 		defineTool("recommend_actions", "Generate bounded action suggestions for a theme and audience.", map[string]interface{}{

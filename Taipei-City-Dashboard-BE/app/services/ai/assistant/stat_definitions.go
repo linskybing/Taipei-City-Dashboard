@@ -5,13 +5,13 @@ import "github.com/tmc/langchaingo/llms"
 func statisticalToolDefinitions() []llms.Tool {
 	props := statToolProperties()
 	return []llms.Tool{
-		defineTool("clean_impute", "Profile component data quality and recommend non-persistent cleaning or imputation actions.", props, []string{"component_id"}),
-		defineTool("descriptive_report", "Summarize numeric component data with distribution and top/bottom segment statistics.", props, []string{"component_id"}),
-		defineTool("trend_detect", "Detect component trend direction, slope, percent change, and trend strength.", props, []string{"component_id"}),
-		defineTool("seasonal_decompose", "Estimate lightweight seasonal buckets and residual deviations without external packages.", props, []string{"component_id"}),
-		defineTool("anomaly_detect", "Detect point anomalies using z-score and IQR baselines with bounded results.", props, []string{"component_id"}),
-		defineTool("hypothesis_test", "Run guarded Welch or 2x2 categorical tests when component data shape is suitable.", props, []string{"component_id"}),
-		defineTool("forecast_short_mid", "Create short or medium horizon forecasts using naive, seasonal-naive, or linear baselines.", props, []string{"component_id"}),
+		defineTool("clean_impute", "Use for missingness, duplicates, gaps, data-quality profile, and read-only imputation recommendations.", props, []string{"component_id"}),
+		defineTool("descriptive_report", "Use for mean, median, stddev, quartiles, min/max, distribution, and top/bottom segment summaries.", props, []string{"component_id"}),
+		defineTool("trend_detect", "Use for rising/falling trend, slope, percent change, and trend strength or confidence labels.", props, []string{"component_id"}),
+		defineTool("seasonal_decompose", "Use for seasonality, period buckets, peak/off-peak comparison, and residual-style deviations.", props, []string{"component_id"}),
+		defineTool("anomaly_detect", "Use for outliers, spikes, drops, warning candidates, and bounded z-score/IQR anomaly ranking.", props, []string{"component_id"}),
+		defineTool("hypothesis_test", "Use for two-group comparison, before/after checks, A/B questions, Welch test, or 2x2 categorical tests.", props, []string{"component_id"}),
+		defineTool("forecast_short_mid", "Use for short or medium baseline forecasts, future periods, intervals, and mechanism-unchanged caveats.", props, []string{"component_id"}),
 	}
 }
 

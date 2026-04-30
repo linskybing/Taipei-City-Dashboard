@@ -23,8 +23,9 @@ http.interceptors.request.use((request) => {
 	contentStore.loading = true;
 	contentStore.error = false;
 
-	if (authStore.token) {
-		request.headers.setAuthorization(`Bearer ${authStore.token}`);
+	const token = authStore.token || localStorage.getItem("token");
+	if (token) {
+		request.headers.setAuthorization(`Bearer ${token}`);
 	} else {
 		request.headers.setAuthorization(`Bearer`);
 	}
