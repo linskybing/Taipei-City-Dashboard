@@ -40,6 +40,7 @@ type ResponseExtras struct {
 	RelatedComponents  []RelatedComponent       `json:"related_components"`
 	RecommendedActions []string                 `json:"recommended_actions"`
 	ConfidenceNotes    []string                 `json:"confidence_notes"`
+	Guardrails         []string                 `json:"guardrails"`
 	AnalysisCards      []AnalysisCard           `json:"analysis_cards"`
 	VisualizationRefs  []VisualizationReference `json:"visualization_refs"`
 }

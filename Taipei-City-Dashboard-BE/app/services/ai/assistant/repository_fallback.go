@@ -54,6 +54,7 @@ func buildSearchComponentsFallback(query string, city string, limit int) (string
 		Tool:              "search_components",
 		RelatedComponents: related,
 		ConfidenceNotes:   notes,
+		Guardrails:        componentSearchGuardrails(),
 		Data: map[string]interface{}{
 			"fallback":     "db_metadata",
 			"query":        query,

@@ -14,7 +14,8 @@ func TestMetadataMergesToolOutputs(t *testing.T) {
 			"sources":[{"name":"data.taipei","type":"open_data","url":"https://data.taipei"}],
 			"related_components":[{"id":1,"index":"air_quality","name":"空氣品質","city":"taipei","score":0.91}],
 			"recommended_actions":["檢視污染熱點"],
-			"confidence_notes":["Qdrant metadata match"]
+			"confidence_notes":["Qdrant metadata match"],
+			"guardrails":["只使用回傳組件"]
 		}`,
 		`{
 			"tool":"recommend_actions",
@@ -22,6 +23,7 @@ func TestMetadataMergesToolOutputs(t *testing.T) {
 			"related_components":[{"id":1,"index":"air_quality","name":"空氣品質","city":"taipei","score":0.89}],
 			"recommended_actions":["檢視污染熱點","安排跨局處追蹤"],
 			"confidence_notes":["Qdrant metadata match","需以業務資料確認"],
+			"guardrails":["只使用回傳組件","需要業務確認"],
 			"analysis_cards":[{"tool":"descriptive_report","headline":"描述性統計已產生","confidence_label":"high"}]
 		}`,
 	}
@@ -45,6 +47,9 @@ func TestMetadataMergesToolOutputs(t *testing.T) {
 	}
 	if len(extras.ConfidenceNotes) != 2 {
 		t.Fatalf("ConfidenceNotes length = %d, want 2", len(extras.ConfidenceNotes))
+	}
+	if len(extras.Guardrails) != 2 {
+		t.Fatalf("Guardrails length = %d, want 2", len(extras.Guardrails))
 	}
 	if len(extras.AnalysisCards) != 1 {
 		t.Fatalf("AnalysisCards length = %d, want 1", len(extras.AnalysisCards))

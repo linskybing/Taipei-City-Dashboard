@@ -4,12 +4,12 @@ import "github.com/tmc/langchaingo/llms"
 
 func ToolDefinitions() []llms.Tool {
 	definitions := []llms.Tool{
-		defineTool("search_components", "Search dashboard components by a natural-language policy or city signal query.", map[string]interface{}{
-			"query":           stringSchema("Natural-language query to search for matching dashboard components."),
-			"theme":           enumSchema(validThemeValues(), "Hackathon theme."),
-			"city":            enumSchema(validCityValues(), "City scope."),
-			"limit":           integerSchema("Maximum result count, 1 to 10."),
-			"score_threshold": numberSchema("Similarity threshold from 0 to 1."),
+		defineTool("search_components", "Search approved Taipei/Metro Taipei dashboard component metadata before recommending components, maps, or city signals. Use returned components, confidence notes, and guardrails instead of guessing availability.", map[string]interface{}{
+			"query":           stringSchema("Specific policy, city signal, dataset, chart, or map-layer need to match against public dashboard metadata."),
+			"theme":           enumSchema(validThemeValues(), "Hackathon theme used to narrow the dashboard context."),
+			"city":            enumSchema(validCityValues(), "City scope: taipei or metrotaipei."),
+			"limit":           integerSchema("Maximum result count, 1 to 10. Prefer 3 to 5 unless the user asks for breadth."),
+			"score_threshold": numberSchema("Similarity threshold from 0 to 1. Lower only when recall matters more than precision."),
 		}, []string{"query"}),
 		defineTool("get_component_snapshot", "Get metadata and a small chart sample for one component.", map[string]interface{}{
 			"component_id": integerSchema("Component numeric ID."),

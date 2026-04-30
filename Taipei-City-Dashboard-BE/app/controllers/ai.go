@@ -120,6 +120,7 @@ func ChatWithTWCC(c *gin.Context) {
 			"related_components":  extras.RelatedComponents,
 			"recommended_actions": extras.RecommendedActions,
 			"confidence_notes":    extras.ConfidenceNotes,
+			"guardrails":          extras.Guardrails,
 			"analysis_cards":      extras.AnalysisCards,
 			"visualization_refs":  visualizationRefs,
 			"audit_ref":           auditRef,

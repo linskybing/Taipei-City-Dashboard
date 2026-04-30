@@ -1,10 +1,13 @@
 package ai
 
 import (
+	"TaipeiCityDashboardBE/app/models"
 	"TaipeiCityDashboardBE/global"
 	"context"
 	"strings"
 	"testing"
+
+	"github.com/tmc/langchaingo/llms"
 )
 
 func TestExecuteAllowedToolRejectsUnlistedTool(t *testing.T) {
@@ -64,5 +67,52 @@ func TestToolResultStatusDistinguishesUnavailable(t *testing.T) {
 	}
 	if status := toolResultStatus(`{"tool":"x"}`); status != "success" {
 		t.Fatalf("status = %s, want success", status)
+	}
+}
+
+func TestShouldLoadMemoryOnlyForLatestMessageRequests(t *testing.T) {
+	req := AIChatRequest{
+		SessionID: "session_1",
+		UserID:    "7",
+		Messages: []llms.MessageContent{{
+			Role: llms.ChatMessageTypeHuman,
+		}},
+	}
+	if !shouldLoadMemory(req) {
+		t.Fatal("expected memory for single-message request")
+	}
+	req.Messages = append(req.Messages, llms.MessageContent{Role: llms.ChatMessageTypeHuman})
+	if shouldLoadMemory(req) {
+		t.Fatal("did not expect memory when caller already sends history")
+	}
+}
+
+func TestBuildSessionMemoryBoundsContent(t *testing.T) {
+	longAnswer := strings.Repeat("資料判讀很長 ", 80)
+	memory := buildSessionMemory([]models.AIChatLog{
+		{Question: "第一題\n含換行", Answer: "第一答"},
+		{Question: "第二題", Answer: longAnswer},
+	})
+	for _, want := range []string{"對話記憶", "1. Q:第一題 含換行 A:第一答", "2. Q:第二題 A:"} {
+		if !strings.Contains(memory, want) {
+			t.Fatalf("memory missing %q: %s", want, memory)
+		}
+	}
+	if got := len([]rune(memory)); got > maxMemoryBlockRunes {
+		t.Fatalf("memory length = %d, want <= %d", got, maxMemoryBlockRunes)
+	}
+}
+
+func TestTrimMemoryTextUsesRuneLimitWithEllipsis(t *testing.T) {
+	text := strings.Repeat("臺北資料", 20)
+	trimmed := trimMemoryText(text, 10)
+	if got := len([]rune(trimmed)); got != 10 {
+		t.Fatalf("trimmed length = %d, want 10: %q", got, trimmed)
+	}
+	if !strings.HasSuffix(trimmed, memoryEllipsis) {
+		t.Fatalf("trimmed text should end with ellipsis: %q", trimmed)
+	}
+	if strings.Contains(trimMemoryText("keep", 0), "keep") {
+		t.Fatal("zero limit should not retain content")
 	}
 }

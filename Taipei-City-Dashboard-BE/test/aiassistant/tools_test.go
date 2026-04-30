@@ -55,6 +55,9 @@ func TestToolDefinitionsCarrySchemaEnums(t *testing.T) {
 	if !contains(required, "query") {
 		t.Fatalf("search_components required = %#v, want query", required)
 	}
+	if !strings.Contains(search.Function.Description, "guardrails") {
+		t.Fatalf("search_components description should reference guardrails: %s", search.Function.Description)
+	}
 	assertEnum(t, properties["theme"], "commuting", "disaster", "environment", "health", "labor", "culture")
 	assertEnum(t, properties["city"], "taipei", "metrotaipei")
 }

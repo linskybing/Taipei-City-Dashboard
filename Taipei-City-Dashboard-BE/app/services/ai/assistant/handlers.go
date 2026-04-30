@@ -14,6 +14,7 @@ type toolEnvelope struct {
 	RelatedComponents  []RelatedComponent `json:"related_components,omitempty"`
 	RecommendedActions []string           `json:"recommended_actions,omitempty"`
 	ConfidenceNotes    []string           `json:"confidence_notes,omitempty"`
+	Guardrails         []string           `json:"guardrails,omitempty"`
 	AnalysisCards      []AnalysisCard     `json:"analysis_cards,omitempty"`
 	Data               interface{}        `json:"data,omitempty"`
 }
@@ -60,7 +61,8 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 			"使用 Qdrant 語意檢索公開儀表板組件 metadata。",
 			"若相似度偏低，建議改以更具體的行政議題或地點描述查詢。",
 		},
-		Data: map[string]interface{}{"query": query, "result_count": len(related)},
+		Guardrails: componentSearchGuardrails(),
+		Data:       map[string]interface{}{"query": query, "result_count": len(related)},
 	})
 }
 

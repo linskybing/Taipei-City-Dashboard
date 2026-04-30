@@ -59,5 +59,6 @@ func newSession(req AIChatRequest, options ...llms.CallOption) *aiSession {
 	}
 	s.allowedTools = allowedToolMap(s.callOpts.Tools)
 	s.injectInstructions()
+	s.injectMemory()
 	return s
 }

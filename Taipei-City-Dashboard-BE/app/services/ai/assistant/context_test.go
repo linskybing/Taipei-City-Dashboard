@@ -53,13 +53,7 @@ func TestApplyContextIncludesStatRouting(t *testing.T) {
 	for _, want := range []string{
 		"完整統計診斷",
 		"component_id",
-		"clean_impute",
-		"descriptive_report",
-		"trend_detect",
-		"seasonal_decompose",
-		"anomaly_detect",
-		"hypothesis_test",
-		"forecast_short_mid",
+		"全部統計工具",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("system instruction missing %q:\n%s", want, text)
@@ -78,11 +72,10 @@ func TestApplyContextPrioritizesComponentSearchIntent(t *testing.T) {
 	}}, ctx)
 	text := firstTextPart(messages[0])
 	for _, want := range []string{
-		"查看組件",
 		"推薦組件",
-		"想看某議題資料",
-		"優先呼叫 search_components",
-		"再呼叫 get_component_snapshot",
+		"搜尋",
+		"search_components",
+		"get_component_snapshot",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("system instruction missing %q:\n%s", want, text)
@@ -90,7 +83,7 @@ func TestApplyContextPrioritizesComponentSearchIntent(t *testing.T) {
 	}
 }
 
-func TestApplyContextRequiresOpenDataThroughAirflow(t *testing.T) {
+func TestApplyContextUsesUserFacingOpenDataBoundary(t *testing.T) {
 	ctx, err := NewContext("commuting", "metrotaipei", "government", "")
 	if err != nil {
 		t.Fatalf("NewContext returned error: %v", err)
@@ -101,16 +94,38 @@ func TestApplyContextRequiresOpenDataThroughAirflow(t *testing.T) {
 	}}, ctx)
 	text := firstTextPart(messages[0])
 	for _, want := range []string{
-		"Data-End Airflow DAG",
-		"PostgreSQL",
-		"不得建議或執行前端、後端工具直接串接",
-		"CommonDag ETL",
-		"job_config metadata",
-		"component query",
+		"不直接串接外部 API",
+		"新資料需先匯入、驗證並納入儀表板資料庫",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("system instruction missing %q:\n%s", want, text)
 		}
+	}
+	for _, internalTerm := range []string{
+		"Data-End Airflow DAG",
+		"前端、後端工具",
+		"CommonDag ETL",
+		"job_config metadata",
+		"component query",
+	} {
+		if strings.Contains(text, internalTerm) {
+			t.Fatalf("system instruction leaked internal term %q:\n%s", internalTerm, text)
+		}
+	}
+}
+
+func TestApplyContextStaysCompact(t *testing.T) {
+	ctx, err := NewContext("environment", "metrotaipei", "government", "main-dashboard")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請判讀環境風險"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	if got, limit := len([]rune(text)), 500; got > limit {
+		t.Fatalf("system instruction length = %d, want <= %d:\n%s", got, limit, text)
 	}
 }
 

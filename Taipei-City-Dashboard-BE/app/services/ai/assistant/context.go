@@ -54,50 +54,17 @@ func ThemeLabel(theme string) string {
 }
 
 func buildSystemInstruction(ctx RequestContext) string {
-	playbook := playbookFor(ctx.Theme)
-	return fmt.Sprintf(`你是臺北城市儀表板的六主題 AI 決策助理。
-使用情境：
-- 主題：%s (%s)
-- 城市範圍：%s
-- 受眾：%s
-- 儀表板索引：%s
-
-決策模板：
-- 決策問題：%s
-- 地圖圖層：%s
-- 趨勢圖：%s
-- 比較/排行圖：%s
-- 優先訊號：%s
-- 行動步驟：%s
-- 保守邊界：%s
-
-規則：
-1. 必須優先使用後端提供的 tools 取得組件、資料來源與儀表板脈絡。
-2. 不得編造資料、SQL、模型、來源或即時狀態；資料不足時要明確說明限制。
-3. 回答使用繁體中文，給出可執行的市政/民眾決策建議。
-4. 若涉及城市比較，使用 compare_city_components。
-	5. 若問題很廣，先使用 search_components，再視需要使用 get_component_snapshot。
-	6. 使用者說「查看組件」「找組件」「推薦組件」「有哪些儀表板/組件」或「想看某議題資料」時，視為組件搜尋意圖，優先呼叫 search_components；需要核對單一候選的描述或來源時再呼叫 get_component_snapshot。
-	7. 不直接呼叫模型供應商，不透露金鑰、模型細節或後端設定。
-	8. 統計工具只在使用者明確要求資料品質、描述統計、趨勢、季節、異常、檢定、預測，或使用者指定 component_id 時呼叫；一般儀表板規劃、模板、建議題不得主動呼叫統計工具。
-	9. 若工具回傳 degraded 或候選脈絡，應停止追加高風險工具呼叫，直接保守整理已取得訊號與限制。
-	10. 除非工具明確回傳因果設計，否則不得使用「造成」「導致」「政策效果」等因果語彙。
-	11. 最後輸出要包含「重點判讀」、「可行建議」、「資料信心」三段。
-	12. 外部開放資料或政府 API 只能由 Data-End Airflow DAG 擷取並寫入 PostgreSQL；不得建議或執行前端、後端工具直接串接 data.taipei、data.ntpc.gov.tw、TDX 等資料 API。若需要新資料，請建議新增 CommonDag ETL、job_config metadata 與 component query。
-%s`,
+	return fmt.Sprintf(`你是臺北城市儀表板 AI 決策助理。情境：theme=%s(%s), city=%s, audience=%s, dashboard=%s。
+用繁中回答，固定分「重點判讀」「可行建議」「資料信心」。
+先用 tools 查組件/來源/儀表板；搜尋或推薦組件用 search_components，單一候選用 get_component_snapshot，城市比較用 compare_city_components。
+統計工具只在使用者明確要求資料品質、描述統計、趨勢、季節、異常、檢定、預測，或指定 component_id 時使用；完整統計診斷且有 component_id 時可同輪使用全部統計工具。
+不得編造資料、SQL、即時狀態、模型細節或因果；工具 degraded/unavailable 或資料不足時保守說明限制。
+不得透露金鑰或後端設定，不直接串接外部 API；新資料需先匯入、驗證並納入儀表板資料庫。`,
 		ctx.Theme,
 		ThemeLabel(ctx.Theme),
 		ctx.City,
 		ctx.Audience,
 		emptyAsNone(ctx.DashboardIndex),
-		playbook.Question,
-		playbook.MapLayer,
-		playbook.TrendChart,
-		playbook.RankChart,
-		strings.Join(playbook.Signals, "、"),
-		strings.Join(playbook.Steps, " → "),
-		strings.Join(playbook.Guardrails, "；"),
-		statRoutingInstruction(),
 	)
 }
 

@@ -28,6 +28,7 @@ func BuildMetadata(
 	metadata["related_components"] = extras.RelatedComponents
 	metadata["recommended_actions"] = extras.RecommendedActions
 	metadata["confidence_notes"] = extras.ConfidenceNotes
+	metadata["guardrails"] = extras.Guardrails
 	metadata["analysis_cards"] = extras.AnalysisCards
 
 	data, err := json.Marshal(metadata)
@@ -47,6 +48,7 @@ func ResponseExtrasFromMetadata(raw string) ResponseExtras {
 	json.Unmarshal(rawMap["related_components"], &extras.RelatedComponents)
 	json.Unmarshal(rawMap["recommended_actions"], &extras.RecommendedActions)
 	json.Unmarshal(rawMap["confidence_notes"], &extras.ConfidenceNotes)
+	json.Unmarshal(rawMap["guardrails"], &extras.Guardrails)
 	json.Unmarshal(rawMap["analysis_cards"], &extras.AnalysisCards)
 	return extras
 }
@@ -57,6 +59,7 @@ func mergeToolOutputs(outputs []string) ResponseExtras {
 	componentSeen := make(map[string]bool)
 	actionSeen := make(map[string]bool)
 	noteSeen := make(map[string]bool)
+	guardrailSeen := make(map[string]bool)
 	cardSeen := make(map[string]bool)
 
 	for _, output := range outputs {
@@ -80,6 +83,7 @@ func mergeToolOutputs(outputs []string) ResponseExtras {
 		}
 		appendUniqueStrings(&extras.RecommendedActions, envelope.RecommendedActions, actionSeen)
 		appendUniqueStrings(&extras.ConfidenceNotes, envelope.ConfidenceNotes, noteSeen)
+		appendUniqueStrings(&extras.Guardrails, envelope.Guardrails, guardrailSeen)
 		for _, card := range envelope.AnalysisCards {
 			key := card.Tool + card.Headline
 			if !cardSeen[key] {
