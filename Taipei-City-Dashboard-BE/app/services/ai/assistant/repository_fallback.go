@@ -50,18 +50,12 @@ func buildSearchComponentsFallback(query string, city string, limit int) (string
 	if err != nil {
 		return unavailableTool("search_components", err)
 	}
-	return marshalTool(toolEnvelope{
-		Tool:              "search_components",
-		RelatedComponents: related,
-		ConfidenceNotes:   notes,
-		Guardrails:        componentSearchGuardrails(),
-		Data: map[string]interface{}{
-			"fallback":     "db_metadata",
-			"query":        query,
-			"result_count": len(related),
-			"status":       "degraded",
-		},
-	})
+	return marshalTool(searchComponentsEnvelope(query, related, notes, map[string]interface{}{
+		"fallback":     "db_metadata",
+		"query":        query,
+		"result_count": len(related),
+		"status":       "degraded",
+	}))
 }
 
 func buildDashboardContextFallback(req RequestContext) (string, error) {

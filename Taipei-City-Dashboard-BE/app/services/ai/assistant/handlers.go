@@ -54,16 +54,13 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 		return buildSearchComponentsFallback(query, req.City, limit)
 	}
 	related := filterComponents(results, req.City, limit)
-	return marshalTool(toolEnvelope{
-		Tool:              "search_components",
-		RelatedComponents: related,
-		ConfidenceNotes: []string{
-			"使用 Qdrant 語意檢索公開儀表板組件 metadata。",
-			"若相似度偏低，建議改以更具體的行政議題或地點描述查詢。",
-		},
-		Guardrails: componentSearchGuardrails(),
-		Data:       map[string]interface{}{"query": query, "result_count": len(related)},
-	})
+	if len(related) == 0 {
+		return buildSearchComponentsFallback(query, req.City, limit)
+	}
+	return marshalTool(searchComponentsEnvelope(query, related, []string{
+		"使用 Qdrant 語意檢索公開儀表板組件 metadata。",
+		"若相似度偏低，建議改以更具體的行政議題或地點描述查詢。",
+	}, map[string]interface{}{"query": query, "result_count": len(related)}))
 }
 
 func GetComponentSnapshot(ctx context.Context, args string) (string, error) {

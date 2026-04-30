@@ -44,19 +44,33 @@ func boundedFloat(value float64, fallback float64, min float64, max float64) flo
 }
 
 func filterComponents(items []models.CityComponentScore, city string, limit int) []RelatedComponent {
+	return filterComponentsWithResolver(items, city, limit, getComponent)
+}
+
+func filterComponentsWithResolver(
+	items []models.CityComponentScore,
+	city string,
+	limit int,
+	resolve func(int, string) (models.CityComponent, error),
+) []RelatedComponent {
 	seen := make(map[string]RelatedComponent)
 	order := make([]string, 0, limit)
 	for _, item := range items {
-		if city != "" && item.City != city {
-			continue
+		related := RelatedComponent{
+			ID: item.ID, Index: item.Index, Name: item.Name, City: item.City, Score: item.Score,
 		}
-		key := item.Index
+		if city != "" && item.City != city {
+			component, err := resolve(int(item.ID), city)
+			if err != nil {
+				continue
+			}
+			related = relatedFromComponent(component, item.Score)
+		}
+		key := related.Index + ":" + related.City
 		if _, ok := seen[key]; !ok {
 			order = append(order, key)
 		}
-		seen[key] = RelatedComponent{
-			ID: item.ID, Index: item.Index, Name: item.Name, City: item.City, Score: item.Score,
-		}
+		seen[key] = related
 		if len(order) >= limit {
 			break
 		}
