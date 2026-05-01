@@ -15,13 +15,15 @@ func buildCleanCard(ds statDataset, points []statPoint, input statToolInput) (An
 		"此工具只做讀取與品質診斷，不會寫回資料或執行持久化插補。",
 		"缺值檢查基於後端既有 chart parser 可見的資料點。",
 	}
+	recommendations := cleanRecommendations(ds.InvalidPoints, duplicates, gaps)
 	return statCard("clean_impute", "資料品質已完成讀取式檢查", findings, assumptions, ds, confidence, map[string]interface{}{
 		"query_type":      ds.QueryType,
 		"series_name":     input.SeriesName,
 		"duplicates":      duplicates,
 		"time_gaps":       gaps,
 		"invalid_points":  ds.InvalidPoints,
-		"recommendations": cleanRecommendations(ds.InvalidPoints, duplicates, gaps),
+		"recommendations": recommendations,
+		"visualization":   qualityVisualization(ds.InvalidPoints, duplicates, gaps, recommendations),
 	}, ""), nil
 }
 
@@ -34,11 +36,11 @@ func buildDescriptiveCard(ds statDataset, points []statPoint, input statToolInpu
 		fmt.Sprintf("平均 %.4g，中位數 %.4g，標準差 %.4g。", summary.Mean, summary.Median, summary.StdDev),
 		fmt.Sprintf("範圍 %.4g 至 %.4g，IQR %.4g 至 %.4g。", summary.Min, summary.Max, summary.Q1, summary.Q3),
 	}
-	return statCard("descriptive_report", "描述性統計已產生", findings, baseAssumptions(), ds, confidence, map[string]interface{}{
+	return statCard("descriptive_report", "描述性統計已產生", findings, baseAssumptions(), ds, confidence, withVisualization(map[string]interface{}{
 		"summary":         summary,
 		"top_segments":    extremePoints(points, limit, true),
 		"bottom_segments": extremePoints(points, limit, false),
-	}, ""), nil
+	}, boxPlotVisualization(summary, input.SeriesName)), ""), nil
 }
 
 func buildTrendCard(ds statDataset, points []statPoint, input statToolInput) (AnalysisCard, error) {
@@ -56,9 +58,9 @@ func buildTrendCard(ds statDataset, points []statPoint, input statToolInput) (An
 		fmt.Sprintf("斜率 %.4g，期間首尾變化 %.4g%%。", trend.Slope, trend.PercentChange),
 	}
 	assumptions := append(baseAssumptions(), "趨勢偵測為描述性結果，不代表政策造成變化。")
-	return statCard("trend_detect", "趨勢方向已完成估計", findings, assumptions, ds, confidence, map[string]interface{}{
+	return statCard("trend_detect", "趨勢方向已完成估計", findings, assumptions, ds, confidence, withVisualization(map[string]interface{}{
 		"trend": trend,
-	}, ""), nil
+	}, trendVisualization(points, trend)), ""), nil
 }
 
 func statCard(

@@ -1,4 +1,6 @@
 <script setup>
+import ChatAnalysisChart from "./ChatAnalysisChart.vue";
+
 defineProps({
 	actions: { type: Array, default: () => [] },
 	analysisCards: { type: Array, default: () => [] },
@@ -47,6 +49,7 @@ const toolLabel = (tool) => {
           {{ finding }}
         </li>
       </ul>
+      <ChatAnalysisChart :card="card" />
       <small v-if="card.assumptions?.length">
         假設：{{ card.assumptions.slice(0, 2).join("；") }}
       </small>

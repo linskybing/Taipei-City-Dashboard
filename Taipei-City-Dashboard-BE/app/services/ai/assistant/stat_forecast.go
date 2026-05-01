@@ -20,11 +20,11 @@ func buildForecastCard(ds statDataset, points []statPoint, input statToolInput) 
 		"預測區間以歷史殘差近似，僅在近期機制不變時可作參考。",
 	}
 	assumptions := append(baseAssumptions(), "forecast 不代表實測值；若政策、天候或資料定義改變需重跑。")
-	return statCard("forecast_short_mid", "短中期 baseline 預測已產生", findings, assumptions, ds, confidence, map[string]interface{}{
+	return statCard("forecast_short_mid", "短中期 baseline 預測已產生", findings, assumptions, ds, confidence, withVisualization(map[string]interface{}{
 		"method":   method,
 		"horizon":  horizon,
 		"forecast": forecast,
-	}, "approximate prediction band"), nil
+	}, forecastVisualization(points, forecast, method)), "approximate prediction band"), nil
 }
 
 func forecastSeries(points []statPoint, horizon int, period int) ([]forecastPoint, string) {

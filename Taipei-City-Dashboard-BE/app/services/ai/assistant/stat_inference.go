@@ -27,6 +27,7 @@ func buildHypothesisCard(ds statDataset, points []statPoint, input statToolInput
 		fmt.Sprintf("差異 %.4g，Welch t=%.4g，df=%.4g。", result["difference"], result["t_statistic"], result["df"]),
 	}
 	assumptions := append(baseAssumptions(), "p 值使用常態近似；正式報告需用統計套件交叉覆核。")
+	result["visualization"] = effectIntervalVisualization(result)
 	return statCard("hypothesis_test", "兩組 Welch 比較已完成", findings, assumptions, ds, confidence, result, "95% CI for mean difference"), nil
 }
 
@@ -45,6 +46,7 @@ func buildCategoricalCard(ds statDataset, groups map[string][]statPoint, test st
 		"chi_square_p_value": round4(p),
 		"fisher_p_value":     round4(fisherP),
 	}
+	result["visualization"] = contingencyVisualization(table, names, fisherP)
 	findings := []string{
 		fmt.Sprintf("2x2 table for %s/%s completed。", names[0], names[1]),
 		fmt.Sprintf("chi-square %.4g，Fisher exact p %.4g。", chi2, fisherP),

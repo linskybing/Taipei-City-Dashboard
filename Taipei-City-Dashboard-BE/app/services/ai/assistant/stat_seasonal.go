@@ -12,18 +12,19 @@ func buildSeasonalCard(ds statDataset, points []statPoint, input statToolInput) 
 		return AnalysisCard{}, fmt.Errorf("seasonal_decompose requires at least two full periods")
 	}
 	buckets, residuals := seasonalProfile(points, period)
+	lowBucket, highBucket := seasonalBucketExtremes(buckets)
 	score := qualityScore(ds, points)
 	confidence := confidenceFromQuality(score, len(points))
 	findings := []string{
 		fmt.Sprintf("以 period=%d 建立輕量季節 bucket，共 %d 個 bucket。", period, len(buckets)),
-		fmt.Sprintf("最大平均 bucket 為 %s，最小平均 bucket 為 %s。", buckets[len(buckets)-1]["bucket"], buckets[0]["bucket"]),
+		fmt.Sprintf("最大平均 bucket 為 %s，最小平均 bucket 為 %s。", highBucket, lowBucket),
 	}
 	assumptions := append(baseAssumptions(), "季節分解採 bucket 平均近似，不使用 STL 或外部套件。")
-	return statCard("seasonal_decompose", "季節 bucket 與殘差偏離已估計", findings, assumptions, ds, confidence, map[string]interface{}{
+	return statCard("seasonal_decompose", "季節 bucket 與殘差偏離已估計", findings, assumptions, ds, confidence, withVisualization(map[string]interface{}{
 		"period":                period,
 		"bucket_profile":        buckets,
 		"largest_abs_residuals": residuals,
-	}, ""), nil
+	}, seasonalVisualization(buckets, residuals, period)), ""), nil
 }
 
 func buildAnomalyCard(ds statDataset, points []statPoint, input statToolInput) (AnalysisCard, error) {
@@ -39,9 +40,9 @@ func buildAnomalyCard(ds statDataset, points []statPoint, input statToolInput) (
 		"異常只代表偏離既有分布，需由業務事件或資料品質再確認。",
 	}
 	assumptions := append(baseAssumptions(), "異常偵測使用整體分布基線；概念漂移時需重新檢查。")
-	return statCard("anomaly_detect", "候選異常點已完成排序", findings, assumptions, ds, confidence, map[string]interface{}{
+	return statCard("anomaly_detect", "候選異常點已完成排序", findings, assumptions, ds, confidence, withVisualization(map[string]interface{}{
 		"anomalies": anomalies,
-	}, ""), nil
+	}, anomalyVisualization(points, anomalies)), ""), nil
 }
 
 func seasonalProfile(points []statPoint, period int) ([]map[string]interface{}, []map[string]interface{}) {
@@ -61,9 +62,6 @@ func seasonalProfile(points []statPoint, period int) ([]map[string]interface{}, 
 			"count":  len(values),
 		})
 	}
-	sort.SliceStable(buckets, func(i, j int) bool {
-		return buckets[i]["mean"].(float64) < buckets[j]["mean"].(float64)
-	})
 	residuals := make([]map[string]interface{}, 0, len(sorted))
 	for i, point := range sorted {
 		resid := point.Value - means[i%period]
@@ -82,6 +80,23 @@ func seasonalProfile(points []statPoint, period int) ([]map[string]interface{}, 
 		residuals = residuals[:10]
 	}
 	return buckets, residuals
+}
+
+func seasonalBucketExtremes(buckets []map[string]interface{}) (string, string) {
+	if len(buckets) == 0 {
+		return "", ""
+	}
+	low := buckets[0]
+	high := buckets[0]
+	for _, bucket := range buckets[1:] {
+		if bucket["mean"].(float64) < low["mean"].(float64) {
+			low = bucket
+		}
+		if bucket["mean"].(float64) > high["mean"].(float64) {
+			high = bucket
+		}
+	}
+	return fmt.Sprintf("%v", low["bucket"]), fmt.Sprintf("%v", high["bucket"])
 }
 
 func anomalyPoints(points []statPoint, limit int) []map[string]interface{} {
