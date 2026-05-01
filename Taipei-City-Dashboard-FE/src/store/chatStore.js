@@ -1,43 +1,68 @@
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { defineStore } from "pinia";
 import http from "../router/axios";
 import { useAuthStore } from "./authStore";
+import {
+	buildAssistantErrorMessage,
+	buildAssistantMessage,
+	buildHistoryChatMessage,
+	defaultChatData,
+	defaultSettings,
+} from "./chatSessionHelpers";
+import { createChatSessionActions } from "./chatSessionActions";
 
-const defaultChatData = [
-	{
-		id: 1,
-		role: "bot",
-		isDefault: true,
-		content:
-			"您好，我是臺北城市儀表板 AI 決策助理。請輸入城市議題或 component_id，我會檢索儀表板組件；若要求分析、資料品質、描述統計、趨勢、季節、異常、檢定或預測，會使用對應統計工具整理分析。",
-	},
-];
+const currentSessionStorageKey = "chatCurrentSessionId";
 
-const defaultSettings = {
-	theme: "auto",
-	city: "metrotaipei",
-	audience: "government",
-	dashboardIndex: "",
-};
+let localMessageSequence = 0;
+
+function nextMessageId(prefix = "chat") {
+	localMessageSequence += 1;
+	return `${prefix}_${Date.now()}_${localMessageSequence}`;
+}
 
 export const useChatStore = defineStore("chat", () => {
-	const savedChatData = JSON.parse(sessionStorage.getItem("chatData")) || [];
-	const chatData = ref([...defaultChatData, ...savedChatData]);
+	const chatData = ref([...defaultChatData]);
 	const chatSettings = ref({ ...defaultSettings });
+	const sessionList = ref([]);
+	const currentSessionId = ref(sessionStorage.getItem(currentSessionStorageKey) || "");
+	const currentSessionTitle = ref("");
+	const sessionsLoading = ref(false);
+	const sessionBusy = ref(false);
+	const historyLoading = ref(false);
 	const authStore = useAuthStore();
 
-	watch(
-		chatData,
-		(newVal) => {
-			const userBotMessages = newVal.filter((item) => !item.isDefault);
-			sessionStorage.setItem("chatData", JSON.stringify(userBotMessages));
-		},
-		{ deep: true },
-	);
+	const hasAIChatAccess = () => Boolean(authStore.token || localStorage.getItem("token"));
+
+	const resetCurrentSession = () => {
+		currentSessionId.value = "";
+		currentSessionTitle.value = "";
+		sessionStorage.removeItem(currentSessionStorageKey);
+		chatData.value = [...defaultChatData];
+	};
+
+	const setCurrentSession = (session = {}) => {
+		currentSessionId.value = session.session || "";
+		currentSessionTitle.value = session.title || "";
+		if (currentSessionId.value) {
+			sessionStorage.setItem(currentSessionStorageKey, currentSessionId.value);
+			return;
+		}
+		sessionStorage.removeItem(currentSessionStorageKey);
+	};
+
+	const replaceChatHistory = (messages = []) => {
+		chatData.value = [
+			...defaultChatData,
+			...messages.map((message) => ({
+				...buildHistoryChatMessage(message),
+				id: message.id || nextMessageId(message.role || "history"),
+			})),
+		];
+	};
 
 	const addChatData = (newChatData) => {
-		const id = chatData.value.length + 1;
-		chatData.value.push({ id, isDefault: false, ...newChatData });
+		const id = newChatData.id || nextMessageId(newChatData.role || "chat");
+		chatData.value = [...chatData.value, { id, isDefault: false, ...newChatData }];
 		return id;
 	};
 
@@ -45,25 +70,54 @@ export const useChatStore = defineStore("chat", () => {
 		chatSettings.value = { ...chatSettings.value, ...settings };
 	};
 
+	const {
+		bootstrapSessions,
+		selectSession,
+		createSession,
+		renameCurrentSession,
+		deleteCurrentSession,
+	} = createChatSessionActions({
+		http,
+		hasAIChatAccess,
+		sessionList,
+		currentSessionId,
+		sessionsLoading,
+		sessionBusy,
+		historyLoading,
+		chatData,
+		defaultChatData,
+		resetCurrentSession,
+		setCurrentSession,
+		replaceChatHistory,
+	});
+
 	const addQueryData = async (newChatData, settings = {}) => {
 		const mergedSettings = { ...chatSettings.value, ...settings };
 		setChatSettings(mergedSettings);
-		addChatData({ role: "user", content: newChatData.content });
 
-		if (!authStore.token && !localStorage.getItem("token")) {
+		if (!hasAIChatAccess()) {
 			addChatData({
 				role: "bot",
 				content: "請先登入會員後再使用 AI 決策助理。",
 				error: true,
 			});
-			return;
+			return false;
 		}
+		if (!currentSessionId.value) {
+			addChatData({
+				role: "bot",
+				content: "請先建立一個新的對話 session，再開始提問。",
+				error: true,
+			});
+			return false;
+		}
+		addChatData({ role: "user", content: newChatData.content });
 
 		const loadingId = addChatData({ role: "bot", content: "正在整理儀表板訊號與資料來源..." });
 
 		try {
 			const response = await http.post("/ai/chat/twai", {
-				session: getSessionID(),
+				session: currentSessionId.value,
 				stream: false,
 				theme: mergedSettings.theme,
 				city: mergedSettings.city,
@@ -71,75 +125,57 @@ export const useChatStore = defineStore("chat", () => {
 				dashboard_index: mergedSettings.dashboardIndex,
 				messages: [{ role: "user", content: newChatData.content }],
 			});
-			updateBotMessage(loadingId, buildAssistantMessage(response.data?.data));
+			updateBotMessage(loadingId, { id: loadingId, ...buildAssistantMessage(response.data?.data) });
+			const currentSummary = sessionList.value.find((item) => item.session === currentSessionId.value) || {};
+			const refreshedSession = {
+				...currentSummary,
+				session: currentSessionId.value,
+				title: currentSessionTitle.value || currentSummary.title || "新對話",
+				status: "active",
+				last_activity_at: new Date().toISOString(),
+			};
+			sessionList.value = [
+				refreshedSession,
+				...sessionList.value.filter((item) => item.session !== currentSessionId.value),
+			];
+			return true;
 		} catch (error) {
-			console.error("AIChatError:", error);
 			updateBotMessage(loadingId, {
 				role: "bot",
 				content: buildAssistantErrorMessage(error),
 				error: true,
 			});
+			if (error?.response?.status === 404 || error?.response?.status === 410) {
+				await bootstrapSessions();
+			}
+			return false;
 		}
 	};
 
 	const updateBotMessage = (id, payload) => {
 		const index = chatData.value.findIndex((item) => item.id === id);
 		if (index < 0) return;
-		chatData.value[index] = { id, isDefault: false, ...payload };
-	};
-
-	const saveChatLog = async (question, answer) => {
-		try {
-			const formData = new FormData();
-			formData.append("session", getSessionID());
-			formData.append("question", question);
-			formData.append("answer", JSON.stringify(answer));
-			await http.post("/chatlog/", formData, {
-				headers: { "Content-Type": "multipart/form-data" },
-			});
-		} catch (error) {
-			console.error("saveChatLog error:", error);
-		}
+		chatData.value = chatData.value.map((item) =>
+			item.id === id ? { id, isDefault: false, ...payload } : item,
+		);
 	};
 
 	return {
 		chatData,
 		chatSettings,
+		sessionList,
+		currentSessionId,
+		currentSessionTitle,
+		sessionsLoading,
+		sessionBusy,
+		historyLoading,
 		addChatData,
 		addQueryData,
-		saveChatLog,
+		bootstrapSessions,
+		selectSession,
+		createSession,
+		renameCurrentSession,
+		deleteCurrentSession,
 		setChatSettings,
 	};
 });
-
-function buildAssistantMessage(data = {}) {
-	const relations = data.related_components || [];
-	return {
-		role: "bot",
-		content: data.content || "目前沒有足夠資料形成判讀。",
-		relations,
-		sources: data.sources || [],
-		actions: data.recommended_actions || [],
-		confidenceNotes: data.confidence_notes || [],
-		analysisCards: data.analysis_cards || [],
-		visualizations: data.visualization_refs || [],
-		button: relations.length > 0 ? [{ id: 1, text: "建立儀表板" }] : null,
-	};
-}
-
-function buildAssistantErrorMessage(error) {
-	const status = error?.response?.status;
-	if (status === 401 || status === 403) {
-		return "登入狀態已失效，請重新登入後再使用 AI 決策助理。";
-	}
-	return "目前無法取得 AI 決策助理回覆，請稍後再試或改以更具體的議題描述查詢。";
-}
-
-function getSessionID() {
-	const d = new Date();
-	const todayId =
-		d.getFullYear() +
-		String(d.getMonth() + 1).padStart(2, "0") +
-		String(d.getDate()).padStart(2, "0");
-	return `session_${todayId}`;
-}

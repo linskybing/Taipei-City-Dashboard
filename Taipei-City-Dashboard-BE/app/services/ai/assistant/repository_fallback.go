@@ -45,16 +45,18 @@ func searchComponentsByMetadata(query string, city string, limit int) ([]Related
 	return related, notes, nil
 }
 
-func buildSearchComponentsFallback(query string, city string, limit int) (string, error) {
+func buildSearchComponentsFallback(query string, city string, limit int, cityResolutionDropCount int, cityResolutionDropPreview []cityResolutionDropPreview) (string, error) {
 	related, notes, err := searchComponentsByMetadata(query, city, limit)
 	if err != nil {
 		return unavailableTool("search_components", err)
 	}
 	return marshalTool(searchComponentsEnvelope(query, related, notes, map[string]interface{}{
-		"fallback":     "db_metadata",
-		"query":        query,
-		"result_count": len(related),
-		"status":       "degraded",
+		"fallback":                  "db_metadata",
+		"query":                     query,
+		"result_count":              len(related),
+		"status":                    "degraded",
+		"city_resolution_drop_count": cityResolutionDropCount,
+		"city_resolution_drop_preview": cityResolutionDropPreview,
 	}))
 }
 

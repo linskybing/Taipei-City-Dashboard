@@ -4,7 +4,9 @@ import (
 	"TaipeiCityDashboardBE/app/services/ai"
 	"TaipeiCityDashboardBE/app/services/ai/assistant"
 	"TaipeiCityDashboardBE/app/util"
+	"TaipeiCityDashboardBE/logs"
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -25,12 +27,6 @@ func ChatWithTWCC(c *gin.Context) {
 		return
 	}
 
-	// 1. Session ID Management
-	sessionID := input.SessionID
-	if sessionID == "" {
-		sessionID = "session_" + util.GenerateRandomString(10)
-	}
-	sessionID = html.EscapeString(sessionID)
 	assistantContext, err := assistant.NewContext(input.Theme, input.City, input.Audience, input.DashboardIndex)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -41,11 +37,31 @@ func ChatWithTWCC(c *gin.Context) {
 		return
 	}
 
-	// 2. Prepare AI Request
+	// 1. Prepare AI Request Context
 	_, accountID, _, _, _ := util.GetUserInfoFromContext(c)
+	userID := fmt.Sprintf("%d", accountID)
+	session, err := ensureOrCreateAIChatSession(c.Request.Context(), html.EscapeString(input.SessionID), userID, "")
+	if err != nil {
+		if errors.Is(err, ai.ErrAIChatSessionDeleted) {
+			c.JSON(http.StatusGone, gin.H{
+				"status":     "error",
+				"error_code": "AI_SESSION_DELETED",
+				"message":    err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":     "error",
+			"error_code": "AI_SESSION_ERROR",
+			"message":    err.Error(),
+		})
+		return
+	}
+
+	// 2. Prepare AI Request
 	req := ai.AIChatRequest{
-		SessionID: sessionID,
-		UserID:    fmt.Sprintf("%d", accountID),
+		SessionID: session.SessionID,
+		UserID:    userID,
 		IPAddress: c.ClientIP(),
 		Messages:  assistant.ApplyContext(input.ToServiceMessages(), assistantContext),
 		Params:    assistantContext.Metadata(),
@@ -75,7 +91,7 @@ func ChatWithTWCC(c *gin.Context) {
 			return nil
 		}))
 
-		_, err := ai.ChatWithTWCC(c.Request.Context(), req, options...)
+		logEntry, err := executeAIChatWithTWCC(c.Request.Context(), req, options...)
 		if err != nil {
 			if !c.Writer.Written() {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -84,12 +100,16 @@ func ChatWithTWCC(c *gin.Context) {
 					"message":    err.Error(),
 				})
 			}
+			return
+		}
+		if err := recordAIChatSessionActivity(c.Request.Context(), session.SessionID, userID, logEntry.CreatedAt); err != nil {
+			logs.FError("AI session activity update error: %v", err)
 		}
 		return
 	}
 
 	// 5. Standard Non-Streaming Response
-	logEntry, err := ai.ChatWithTWCC(c.Request.Context(), req, options...)
+	logEntry, err := executeAIChatWithTWCC(c.Request.Context(), req, options...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":     "error",
@@ -97,6 +117,9 @@ func ChatWithTWCC(c *gin.Context) {
 			"message":    err.Error(),
 		})
 		return
+	}
+	if err := recordAIChatSessionActivity(c.Request.Context(), session.SessionID, userID, logEntry.CreatedAt); err != nil {
+		logs.FError("AI session activity update error: %v", err)
 	}
 	extras := assistant.ResponseExtrasFromMetadata(logEntry.Metadata)
 	auditRef := fmt.Sprintf("ai_chatlog:%d", logEntry.ID)

@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,12 @@ type AIChatLog struct {
 	Metadata     string    `gorm:"type:jsonb;default:'{}'" json:"metadata"`
 	IPAddress    string    `gorm:"type:varchar(45);not null" json:"ip_address"`
 	CreatedAt    time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+type AIChatSessionSnapshot struct {
+	SessionID       string    `json:"session"`
+	FirstActivityAt time.Time `json:"first_activity_at"`
+	LastActivityAt  time.Time `json:"last_activity_at"`
 }
 
 // TableName overrides the table name used by AIChatLog to `ai_chatlog`
@@ -55,4 +62,42 @@ func GetRecentAIChatLogs(ctx context.Context, sessionID string, userID string, l
 		return nil, err
 	}
 	return logs, nil
+}
+
+func ListAIChatLogsBySession(ctx context.Context, sessionID string, userID string) ([]AIChatLog, error) {
+	if DBManager == nil || strings.TrimSpace(sessionID) == "" || strings.TrimSpace(userID) == "" {
+		return nil, nil
+	}
+	var logs []AIChatLog
+	err := DBManager.
+		WithContext(ctx).
+		Where("session_id = ? AND user_id = ? AND status = ?", strings.TrimSpace(sessionID), strings.TrimSpace(userID), "success").
+		Where("question <> '' OR answer <> ''").
+		Order("created_at ASC, id ASC").
+		Find(&logs).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+func ListAIChatSessionSnapshots(ctx context.Context, userID string) ([]AIChatSessionSnapshot, error) {
+	if DBManager == nil || strings.TrimSpace(userID) == "" {
+		return nil, nil
+	}
+	var snapshots []AIChatSessionSnapshot
+	err := DBManager.
+		WithContext(ctx).
+		Table("ai_chatlog").
+		Select("session_id, MIN(created_at) AS first_activity_at, MAX(created_at) AS last_activity_at").
+		Where("user_id = ? AND status = ?", strings.TrimSpace(userID), "success").
+		Where("session_id <> ''").
+		Group("session_id").
+		Scan(&snapshots).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return snapshots, nil
 }

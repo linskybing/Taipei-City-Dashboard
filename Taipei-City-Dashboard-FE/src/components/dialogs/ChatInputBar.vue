@@ -1,6 +1,11 @@
 <script setup>
 defineProps({
 	modelValue: { type: String, required: true },
+	disabled: { type: Boolean, default: false },
+	placeholder: {
+		type: String,
+		default: "輸入城市議題或 component_id...",
+	},
 });
 
 const emit = defineEmits(["update:modelValue", "send"]);
@@ -10,15 +15,17 @@ const emit = defineEmits(["update:modelValue", "send"]);
   <div class="input-area">
     <input
       :value="modelValue"
+      :disabled="disabled"
+      :placeholder="placeholder"
       type="text"
       autocomplete="off"
-      placeholder="輸入城市議題或 component_id..."
       @input="emit('update:modelValue', $event.target.value)"
       @keyup.enter="emit('send', modelValue)"
     >
     <button
       type="button"
       aria-label="送出訊息"
+      :disabled="disabled"
       @click="emit('send', modelValue)"
     >
       <span class="material-icons-round">send</span>
@@ -55,6 +62,12 @@ const emit = defineEmits(["update:modelValue", "send"]);
 	box-shadow: 0 0 0 3px rgb(90 156 248 / 25%);
 }
 
+.input-area input[type="text"]:disabled {
+	background: #d5dbe2;
+	cursor: not-allowed;
+	color: #5b6570;
+}
+
 .input-area button {
 	width: 42px;
 	height: 42px;
@@ -74,5 +87,10 @@ const emit = defineEmits(["update:modelValue", "send"]);
 	background: #2b77e0;
 	border-color: #8cbcff;
 	outline: none;
+}
+
+.input-area button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
 }
 </style>

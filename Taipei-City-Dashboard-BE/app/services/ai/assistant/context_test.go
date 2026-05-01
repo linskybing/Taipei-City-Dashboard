@@ -1,6 +1,7 @@
 package assistant
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -24,14 +25,14 @@ func TestNewContextRejectsInvalidTheme(t *testing.T) {
 }
 
 func TestRecommendActionsRejectsInvalidCity(t *testing.T) {
-	_, err := RecommendActions(nil, `{"theme":"auto","city":"global","audience":"public"}`)
+	_, err := RecommendActions(context.TODO(), `{"theme":"auto","city":"global","audience":"public"}`)
 	if err == nil {
 		t.Fatal("expected invalid city error")
 	}
 }
 
 func TestRecommendActionsRejectsInvalidJSON(t *testing.T) {
-	_, err := RecommendActions(nil, `{bad-json`)
+	_, err := RecommendActions(context.TODO(), `{bad-json`)
 	if err == nil {
 		t.Fatal("expected invalid JSON error")
 	}
@@ -110,6 +111,27 @@ func TestApplyContextUsesUserFacingOpenDataBoundary(t *testing.T) {
 	} {
 		if strings.Contains(text, internalTerm) {
 			t.Fatalf("system instruction leaked internal term %q:\n%s", internalTerm, text)
+		}
+	}
+}
+
+func TestApplyContextIncludesLowConfidenceConstraint(t *testing.T) {
+	ctx, err := NewContext("disaster", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請推薦防災組件"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"低信心",
+		"degraded",
+		"不得直接推薦 component",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
 		}
 	}
 }

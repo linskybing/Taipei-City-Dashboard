@@ -43,7 +43,19 @@ func boundedFloat(value float64, fallback float64, min float64, max float64) flo
 	return value
 }
 
-func filterComponents(items []models.CityComponentScore, city string, limit int) []RelatedComponent {
+type filteredComponents struct {
+	related                 []RelatedComponent
+	cityResolutionDropCount int
+	cityResolutionDropPreview []cityResolutionDropPreview
+}
+
+type cityResolutionDropPreview struct {
+	Index string `json:"index"`
+	Name  string `json:"name,omitempty"`
+	City  string `json:"city,omitempty"`
+}
+
+func filterComponents(items []models.CityComponentScore, city string, limit int) filteredComponents {
 	return filterComponentsWithResolver(items, city, limit, getComponent)
 }
 
@@ -52,9 +64,12 @@ func filterComponentsWithResolver(
 	city string,
 	limit int,
 	resolve func(int, string) (models.CityComponent, error),
-) []RelatedComponent {
+) filteredComponents {
 	seen := make(map[string]RelatedComponent)
 	order := make([]string, 0, limit)
+	previewKeys := make(map[string]bool)
+	dropCount := 0
+	dropPreview := make([]cityResolutionDropPreview, 0, 2)
 	for _, item := range items {
 		related := RelatedComponent{
 			ID: item.ID, Index: item.Index, Name: item.Name, City: item.City, Score: item.Score,
@@ -62,6 +77,16 @@ func filterComponentsWithResolver(
 		if city != "" && item.City != city {
 			component, err := resolve(int(item.ID), city)
 			if err != nil {
+				dropCount++
+				previewKey := item.Index + ":" + item.City
+				if !previewKeys[previewKey] && len(dropPreview) < 2 {
+					previewKeys[previewKey] = true
+					dropPreview = append(dropPreview, cityResolutionDropPreview{
+						Index: item.Index,
+						Name:  item.Name,
+						City:  item.City,
+					})
+				}
 				continue
 			}
 			related = relatedFromComponent(component, item.Score)
@@ -79,7 +104,11 @@ func filterComponentsWithResolver(
 	for _, key := range order {
 		related = append(related, seen[key])
 	}
-	return related
+	return filteredComponents{
+		related:                   related,
+		cityResolutionDropCount:   dropCount,
+		cityResolutionDropPreview: dropPreview,
+	}
 }
 
 func relatedFromComponent(component models.CityComponent, score float64) RelatedComponent {

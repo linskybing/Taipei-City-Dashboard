@@ -32,8 +32,8 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 		Query          string  `json:"query"`
 		Theme          string  `json:"theme"`
 		City           string  `json:"city"`
-		Limit          int     `json:"limit"`
-		ScoreThreshold float64 `json:"score_threshold"`
+		Limit          *int     `json:"limit"`
+		ScoreThreshold *float64 `json:"score_threshold"`
 	}
 	if err := parseArgs(args, &input); err != nil {
 		return "", err
@@ -46,21 +46,26 @@ func SearchComponents(ctx context.Context, args string) (string, error) {
 	if query == "" {
 		query = ThemeLabel(req.Theme)
 	}
-	limit := boundedInt(input.Limit, 5, 1, 10)
-	score := boundedFloat(input.ScoreThreshold, 0.78, 0, 1)
+	limit := resolvedSearchLimit(input.Limit)
+	score := resolvedSearchScoreThreshold(input.ScoreThreshold)
+	recallLimit := limit * 3
 
-	results, err := models.GetComponentByQueryVector(query, limit*2, score)
+	results, err := models.GetComponentByQueryVector(query, recallLimit, score)
 	if err != nil {
-		return buildSearchComponentsFallback(query, req.City, limit)
+		return buildSearchComponentsFallback(query, req.City, limit, 0, nil)
 	}
-	related := filterComponents(results, req.City, limit)
+	filtered := filterComponents(results, req.City, recallLimit)
+	related := rankRelatedComponents(query, filtered.related)
+	if len(related) > limit {
+		related = related[:limit]
+	}
 	if len(related) == 0 {
-		return buildSearchComponentsFallback(query, req.City, limit)
+		return buildSearchComponentsFallback(query, req.City, limit, filtered.cityResolutionDropCount, filtered.cityResolutionDropPreview)
 	}
 	return marshalTool(searchComponentsEnvelope(query, related, []string{
-		"使用 Qdrant 語意檢索公開儀表板組件 metadata。",
+		"使用 Qdrant 語意檢索做候選召回，並以 metadata 詞項做本地重排。",
 		"若相似度偏低，建議改以更具體的行政議題或地點描述查詢。",
-	}, map[string]interface{}{"query": query, "result_count": len(related)}))
+	}, map[string]interface{}{"query": query, "status": "ok", "result_count": len(related), "recall_count": len(results), "city_resolution_drop_count": filtered.cityResolutionDropCount, "city_resolution_drop_preview": filtered.cityResolutionDropPreview}))
 }
 
 func GetComponentSnapshot(ctx context.Context, args string) (string, error) {

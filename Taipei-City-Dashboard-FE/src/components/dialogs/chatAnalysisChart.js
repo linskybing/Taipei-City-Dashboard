@@ -1,3 +1,5 @@
+import { buildAnalysisChartXAxis } from "./chatAnalysisChartAxis";
+
 const colors = ["#65b7ff", "#8bd17c", "#f7c66b", "#f27d7d", "#b9a6ff"];
 
 export function buildAnalysisChart(card) {
@@ -81,10 +83,11 @@ function forecastBand(viz) {
 }
 
 function chart(type, title, series, extra = {}) {
+	const xaxis = buildAnalysisChartXAxis(type, series);
 	return {
 		mode: "chart",
 		type,
-		height: extra.height || 190,
+		height: extra.height || (xaxis.type === "datetime" ? 220 : 190),
 		series,
 		caption: extra.caption,
 		options: {
@@ -98,7 +101,7 @@ function chart(type, title, series, extra = {}) {
 			stroke: { curve: "straight", width: series.map((item) => (item.type === "rangeArea" ? 0 : 2)) },
 			title: { text: title, style: { color: "#f4f7fb", fontSize: "12px", fontWeight: 700 } },
 			tooltip: { theme: "dark", y: { formatter: formatNumber } },
-			xaxis: { labels: { style: { colors: "#aeb9c6" }, trim: true } },
+			xaxis,
 			yaxis: { labels: { style: { colors: "#aeb9c6" }, formatter: type === "heatmap" ? label : formatNumber } },
 			annotations: { yaxis: extra.yAnnotations || [], xaxis: extra.xAnnotations || [] },
 		},
