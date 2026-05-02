@@ -1,0 +1,530 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_9c71c6c1dff7b3a5",
+        "city": "taipei",
+        "district": "中正區",
+        "location_name": "臺北車站北側門(市民大道一段)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_256f0ffb32520a09",
+        "city": "taipei",
+        "district": "中正區",
+        "location_name": "捷運公館站前(羅斯福路四段68號至108巷前)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_242157b93a91c88b",
+        "city": "taipei",
+        "district": "中正區",
+        "location_name": "中山南路與常德街口(臺大醫院旁)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_e4d3747ef3f93067",
+        "city": "taipei",
+        "district": "中正區",
+        "location_name": "捷運臺大醫院站-往北",
+        "item": "違規停車",
+        "device_type": "公車站區科技執法(公運處提供)",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_10c185bf7c586d18",
+        "city": "taipei",
+        "district": "中正區",
+        "location_name": "臺大醫院站-往北",
+        "item": "違規停車",
+        "device_type": "公車站區科技執法(公運處提供)",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51285171018732,
+          25.06272102963577
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_18ad6340c8e9e433",
+        "city": "taipei",
+        "district": "大同區",
+        "location_name": "臺北轉運站前(市民大道一段)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.53830691546395,
+          25.06827084331696
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_969939f68f6e3592",
+        "city": "taipei",
+        "district": "中山區",
+        "location_name": "馬偕醫院周邊(中山北路二段92號)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.53830691546395,
+          25.06827084331696
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_7cc6e92984b4be21",
+        "city": "taipei",
+        "district": "中山區",
+        "location_name": "大直街與北安路口",
+        "item": "闖紅燈、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.53830691546395,
+          25.06827084331696
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_8172d59a0e295d23",
+        "city": "taipei",
+        "district": "中山區",
+        "location_name": "民權東路與建國北路口",
+        "item": "闖紅燈、不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.53830691546395,
+          25.06827084331696
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_4ed8f8fff6390e7f",
+        "city": "taipei",
+        "district": "中山區",
+        "location_name": "南京東路與建國北路口",
+        "item": "闖紅燈、不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.54452509700266,
+          25.027894351178453
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_445ffda2ba48937b",
+        "city": "taipei",
+        "district": "大安區",
+        "location_name": "臺北市立殯儀館(懷愛館)辛亥路三段",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.54452509700266,
+          25.027894351178453
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_c4e80ac2f4ca130f",
+        "city": "taipei",
+        "district": "大安區",
+        "location_name": "忠孝東路與敦化南路口(含敦化南路1段270巷與仁愛路4段71巷口)",
+        "item": "闖紅燈、不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車、行經設有停車再開標誌、標字之交岔路口不依規定停讓",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.54452509700266,
+          25.027894351178453
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_3fdfc4e9e2b59c7b",
+        "city": "taipei",
+        "district": "大安區",
+        "location_name": "仁愛路、敦化南路口",
+        "item": "闖紅燈、不停讓行人、違規停車、不依規定轉彎",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.49791184310016,
+          25.029012188834212
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_e713f8767d33bfee",
+        "city": "taipei",
+        "district": "萬華區",
+        "location_name": "中華路北站-往南",
+        "item": "違規停車",
+        "device_type": "公車站區科技執法(公運處提供)",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.57085187523168,
+          25.032069795640982
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_d5dbe29e48457d98",
+        "city": "taipei",
+        "district": "信義區",
+        "location_name": "市府轉運站前(忠孝東路五段)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.57085187523168,
+          25.032069795640982
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_2d6311985a855885",
+        "city": "taipei",
+        "district": "信義區",
+        "location_name": "臺北醫學院周邊(吳興街220巷)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.57085187523168,
+          25.032069795640982
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_ccf46510526b5962",
+        "city": "taipei",
+        "district": "信義區",
+        "location_name": "臺北大巨蛋前(忠孝東路四段)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.57085187523168,
+          25.032069795640982
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_e0393c07fc59ce80",
+        "city": "taipei",
+        "district": "信義區",
+        "location_name": "松山商職站〔福德〕",
+        "item": "違規停車",
+        "device_type": "公車站區科技執法(公運處提供)",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.57085187523168,
+          25.032069795640982
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_7a2310604988ee71",
+        "city": "taipei",
+        "district": "信義區",
+        "location_name": "松山高中站〔松隆〕",
+        "item": "違規停車、闖紅燈",
+        "device_type": "公車站區科技執法(公運處提供)",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.54196183340956,
+          25.11881120035579
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_f4930df3650cd1c1",
+        "city": "taipei",
+        "district": "士林區",
+        "location_name": "基河路與劍潭路口",
+        "item": "闖紅燈、不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車、路口未淨空",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51194261111644,
+          25.139997256194345
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_9a00c9251e911cfc",
+        "city": "taipei",
+        "district": "北投區",
+        "location_name": "臺北榮總醫院周邊(石牌路二段與立農街口周邊及石牌路二段與天母西路口周邊)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.59371792323196,
+          25.08247945360845
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_8dc513ee20ed1361",
+        "city": "taipei",
+        "district": "內湖區",
+        "location_name": "內湖路一段739號前",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.61100338575666,
+          25.038764160540154
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_59123894abf45362",
+        "city": "taipei",
+        "district": "南港區",
+        "location_name": "南港車站前(市民大道八段)",
+        "item": "違規停車",
+        "device_type": "違規停車科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.51992760700871,
+          25.028290982660227
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_a187b8cc18f8d207",
+        "city": "taipei",
+        "district": "中正區、大同區",
+        "location_name": "市民大道與承德路口",
+        "item": "闖紅燈、不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.53830691546395,
+          25.06827084331696
+        ]
+      },
+      "properties": {
+        "device_id": "tpe_dev_4a56434a19ebdc4d",
+        "city": "taipei",
+        "district": "中山區、松山區",
+        "location_name": "南京東路與復興北路口",
+        "item": "闖紅燈、車輛不停讓行人、不依規定轉彎、不依標誌標線號誌指示行駛、違規停車",
+        "device_type": "路口多功能科技執法",
+        "location_precision": "district_centroid",
+        "data_time": "2026-05-02 17:41:02.051197+08:00",
+        "city_label": "臺北市"
+      }
+    }
+  ]
+}
