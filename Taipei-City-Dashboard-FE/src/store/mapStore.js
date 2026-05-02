@@ -424,41 +424,100 @@ export const useMapStore = defineStore("map", {
 		// 1. Passes in the map_config (an Array of Objects) of a component and adds all layers to the map layer list
 		addToMapLayerList(map_config) {
 			map_config.forEach((element) => {
-				let mapLayerId = `${element.index}-${element.type}-${element.city}`;
-				// 1-1. If the layer exists, simply turn on the visibility and add it to the visible layers list
-				if (
-					this.currentLayers.find((element) => element === mapLayerId)
-				) {
-					this.loadingLayers.push("rendering");
-					this.turnOnMapLayerVisibility(mapLayerId);
-					if (
-						!this.currentVisibleLayers.find(
-							(element) => element === mapLayerId,
-						)
-					) {
-						this.currentVisibleLayers.push(mapLayerId);
-					}
+				const shouldDeferPointLayer =
+					this.hasAreaAndPointLayers(map_config) &&
+					this.isPointLayer(element) &&
+					this.getLayerRuntimeOptions(element).defaultVisibility ===
+						"none";
+				if (shouldDeferPointLayer) {
 					return;
 				}
-				let appendLayer = { ...element };
-				appendLayer.layerId = mapLayerId;
-				// 1-2. If the layer doesn't exist, call an API to get the layer data
-				this.loadingLayers.push(appendLayer.layerId);
-				if (element.source === "geojson") {
-					this.fetchLocalGeoJson(appendLayer);
-				} else if (element.source === "raster") {
-					this.addRasterSource(appendLayer);
-				}
+				this.ensureLayerLoaded(element, true);
 			});
+		},
+		ensureLayerLoaded(element, turnOnVisibility = false) {
+			const mapLayerId = `${element.index}-${element.type}-${element.city}`;
+			if (this.currentLayers.find((layerId) => layerId === mapLayerId)) {
+				if (turnOnVisibility) {
+					this.loadingLayers.push("rendering");
+					this.turnOnMapLayerVisibility(mapLayerId);
+				}
+				if (
+					turnOnVisibility &&
+					!this.currentVisibleLayers.find(
+						(layerId) => layerId === mapLayerId,
+					)
+				) {
+					this.currentVisibleLayers.push(mapLayerId);
+				}
+				return Promise.resolve();
+			}
+			const appendLayer = { ...element, layerId: mapLayerId };
+			this.loadingLayers.push(appendLayer.layerId);
+			if (element.source === "geojson") {
+				return this.fetchLocalGeoJson(appendLayer);
+			}
+			if (element.source === "raster") {
+				return this.addRasterSource(appendLayer);
+			}
+			return Promise.resolve();
 		},
 		// 2. Call an API to get the layer data
 		fetchLocalGeoJson(map_config) {
-			axios
+			return axios
 				.get(`/mapData/${map_config.index}.geojson`)
 				.then((rs) => {
 					this.addGeojsonSource(map_config, rs.data);
 				})
 				.catch((e) => console.error(e));
+		},
+		getLayerRuntimeOptions(map_config) {
+			const paint = map_config.paint || {};
+			return {
+				defaultVisibility:
+					paint["layer-default-visibility"] || "visible",
+				minzoom: paint["layer-minzoom"],
+				maxzoom: paint["layer-maxzoom"],
+			};
+		},
+		getMapPaintConfig(map_config, extra_paint_configs = {}) {
+			const rawPaint = {
+				...maplayerCommonPaint[`${map_config.type}`],
+				...extra_paint_configs,
+				...(map_config.paint || {}),
+			};
+			const runtimeKeys = [
+				"layer-default-visibility",
+				"layer-minzoom",
+				"layer-maxzoom",
+			];
+			return Object.fromEntries(
+				Object.entries(rawPaint).filter(
+					([key]) => !runtimeKeys.includes(key),
+				),
+			);
+		},
+		isPointLayer(map_config) {
+			return ["circle", "symbol"].includes(map_config.type);
+		},
+		hasAreaAndPointLayers(map_configs) {
+			return (
+				map_configs.some((config) => config.type === "fill") &&
+				map_configs.some((config) => this.isPointLayer(config))
+			);
+		},
+		setLayerVisibility(mapLayerId, visibility) {
+			if (!this.map.getLayer(mapLayerId)) return;
+			this.map.setLayoutProperty(mapLayerId, "visibility", visibility);
+			if (visibility === "visible") {
+				if (!this.currentVisibleLayers.includes(mapLayerId)) {
+					this.currentVisibleLayers.push(mapLayerId);
+				}
+				return;
+			}
+			this.currentVisibleLayers = this.currentVisibleLayers.filter(
+				(layerId) => layerId !== mapLayerId,
+			);
 		},
 		// 3-1. Add a local geojson as a source in mapbox
 		addGeojsonSource(map_config, data) {
@@ -646,22 +705,29 @@ export const useMapStore = defineStore("map", {
 
 			// 初始 filter 設定為第一組 (6 小時降雨)
 			const initialFilter = ["in", "hazard_class", ...filterClass[0]];
+			const runtimeOptions = this.getLayerRuntimeOptions(map_config);
 			const config = {
 				id: map_config.layerId,
 				type: map_config.type,
 				"source-layer":
 					map_config.source === "raster" ? map_config.index : "",
-				paint: {
-					...maplayerCommonPaint[`${map_config.type}`],
-					...extra_paint_configs,
-					...map_config.paint,
-				},
+				paint: this.getMapPaintConfig(
+					map_config,
+					extra_paint_configs,
+				),
 				layout: {
 					...maplayerCommonLayout[`${map_config.type}`],
 					...extra_layout_configs,
+					visibility: runtimeOptions.defaultVisibility,
 				},
 				source: `${map_config.layerId}-source`,
 			};
+			if (runtimeOptions.minzoom !== undefined) {
+				config.minzoom = runtimeOptions.minzoom;
+			}
+			if (runtimeOptions.maxzoom !== undefined) {
+				config.maxzoom = runtimeOptions.maxzoom;
+			}
 			if (
 				map_config.layerId ===
 					"wee_hazard_water-fill-extrusion-metrotaipei" ||
@@ -680,7 +746,10 @@ export const useMapStore = defineStore("map", {
 				this.animateFilter(map_config.layerId);
 			this.currentLayers.push(map_config.layerId);
 			this.mapConfigs[map_config.layerId] = map_config;
-			if (!this.currentVisibleLayers.includes(map_config.layerId)) {
+			if (
+				runtimeOptions.defaultVisibility !== "none" &&
+				!this.currentVisibleLayers.includes(map_config.layerId)
+			) {
 				this.currentVisibleLayers.push(map_config.layerId);
 			}
 			this.loadingLayers = this.loadingLayers.filter(
@@ -2312,15 +2381,33 @@ export const useMapStore = defineStore("map", {
 
 		/* Map Filtering */
 		// 1. Add a filter based on a each map layer's properties (byParam)
-		filterByParam(map_filter, map_configs, xParam, yParam) {
+		async filterByParam(map_filter, map_configs, xParam, yParam) {
 			// If there are layers loading, don't filter
 			if (this.loadingLayers.length > 0) return;
 			const dialogStore = useDialogStore();
 			if (!this.map || dialogStore.dialogs.moreInfo) {
 				return;
 			}
+			const hasAreaAndPointLayers =
+				this.hasAreaAndPointLayers(map_configs);
+			const missingPointLayers = map_configs.filter((map_config) => {
+				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				return (
+					this.isPointLayer(map_config) &&
+					!this.currentLayers.includes(mapLayerId)
+				);
+			});
+			if (missingPointLayers.length > 0) {
+				await Promise.all(
+					missingPointLayers.map((map_config) =>
+						this.ensureLayerLoaded(map_config),
+					),
+				);
+			}
 			map_configs.map((map_config) => {
 				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				const runtimeOptions =
+					this.getLayerRuntimeOptions(map_config);
 				if (map_config && map_config.type === "arc") {
 					this.deckGlLayer[mapLayerId].config.data = this.deckGlLayer[
 						mapLayerId
@@ -2351,6 +2438,18 @@ export const useMapStore = defineStore("map", {
 					});
 					this.renderDeckGLLayer();
 					return;
+				}
+				if (hasAreaAndPointLayers) {
+					if (map_config.type === "fill") {
+						this.map.setFilter(mapLayerId, null);
+						this.setLayerVisibility(mapLayerId, "none");
+						return;
+					}
+					if (this.isPointLayer(map_config)) {
+						this.setLayerVisibility(mapLayerId, "visible");
+					}
+				} else if (runtimeOptions.defaultVisibility === "none") {
+					this.setLayerVisibility(mapLayerId, "visible");
 				}
 				// If x and y both exist, filter by both
 				if (
@@ -2414,8 +2513,12 @@ export const useMapStore = defineStore("map", {
 			if (!this.map || dialogStore.dialogs.moreInfo) {
 				return;
 			}
+			const hasAreaAndPointLayers =
+				this.hasAreaAndPointLayers(map_configs);
 			map_configs.map((map_config) => {
 				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				const runtimeOptions =
+					this.getLayerRuntimeOptions(map_config);
 				if (map_config && map_config.type === "arc") {
 					this.deckGlLayer[mapLayerId].config.data =
 						this.deckGlLayer[mapLayerId].data;
@@ -2423,6 +2526,15 @@ export const useMapStore = defineStore("map", {
 					return;
 				}
 				this.map.setFilter(mapLayerId, null);
+				if (hasAreaAndPointLayers) {
+					if (map_config.type === "fill") {
+						this.setLayerVisibility(mapLayerId, "visible");
+					} else if (this.isPointLayer(map_config)) {
+						this.setLayerVisibility(mapLayerId, "none");
+					}
+				} else if (runtimeOptions.defaultVisibility === "none") {
+					this.setLayerVisibility(mapLayerId, "none");
+				}
 			});
 		},
 		// 4. Remove any layer filters on a map layer.

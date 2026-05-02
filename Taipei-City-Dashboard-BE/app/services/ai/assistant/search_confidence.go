@@ -10,6 +10,13 @@ const (
 	searchConfidenceLow    searchConfidenceBand = "low"
 )
 
+const (
+	highScoreWithAnyToken  = 0.86
+	highScoreWithTwoTokens = 0.84
+	mediumScoreThreshold   = 0.82
+	mediumGapThreshold     = 0.03
+)
+
 type searchConfidenceAssessment struct {
 	band               searchConfidenceBand
 	recommended        []RelatedComponent
@@ -53,7 +60,7 @@ func assessSearchConfidence(query string, ranked []RelatedComponent, degraded bo
 		}
 	}
 
-	if evidence.exactPhrase || (top.Score >= 0.88 && evidence.tokenHits >= 1) || (top.Score >= 0.86 && evidence.tokenHits >= 2) {
+	if evidence.exactPhrase || (top.Score >= highScoreWithAnyToken && evidence.tokenHits >= 1) || (top.Score >= highScoreWithTwoTokens && evidence.tokenHits >= 2) {
 		return searchConfidenceAssessment{
 			band:               searchConfidenceHigh,
 			recommended:        ranked,
@@ -64,7 +71,7 @@ func assessSearchConfidence(query string, ranked []RelatedComponent, degraded bo
 		}
 	}
 
-	if top.Score >= 0.83 && ((evidence.specificQuery && evidence.tokenHits >= 1) || gap >= 0.05) {
+	if top.Score >= mediumScoreThreshold && (evidence.specificQuery || gap >= mediumGapThreshold) {
 		return searchConfidenceAssessment{
 			band:        searchConfidenceMedium,
 			recommended: ranked,
