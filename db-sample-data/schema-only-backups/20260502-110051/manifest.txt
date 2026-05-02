@@ -1,0 +1,4 @@
+postgres-data	dashboard	/Users/sky/Desktop/Taipei-city-dashboard-skills/Taipei-City-Dashboard/db-sample-data/schema-only-backups/20260502-110051/postgres-data_dashboard_schema_only.sql
+postgres-data	postgres	/Users/sky/Desktop/Taipei-city-dashboard-skills/Taipei-City-Dashboard/db-sample-data/schema-only-backups/20260502-110051/postgres-data_postgres_schema_only.sql
+postgres-manager	dashboardmanager	/Users/sky/Desktop/Taipei-city-dashboard-skills/Taipei-City-Dashboard/db-sample-data/schema-only-backups/20260502-110051/postgres-manager_dashboardmanager_schema_only.sql
+postgres-manager	postgres	/Users/sky/Desktop/Taipei-city-dashboard-skills/Taipei-City-Dashboard/db-sample-data/schema-only-backups/20260502-110051/postgres-manager_postgres_schema_only.sql
