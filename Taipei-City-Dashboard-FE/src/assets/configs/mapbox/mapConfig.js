@@ -501,6 +501,27 @@ export const maplayerCommonLayout = {
 			1.4,
 		],
 	},
+	"symbol-parking_supply_label": {
+		"text-field": ["coalesce", ["get", "symbol_text"], ""],
+		"text-size": [
+			"interpolate",
+			["linear"],
+			["coalesce", ["to-number", ["get", "capacity_total"]], 0],
+			0,
+			11,
+			10,
+			13,
+			50,
+			16,
+			200,
+			20,
+			1000,
+			26,
+		],
+		"text-anchor": "center",
+		"text-allow-overlap": true,
+		"text-ignore-placement": true,
+	},
 	"symbol-metro-density": {
 		"icon-image": "metro",
 		"icon-size": [

@@ -436,7 +436,7 @@ export const useMapStore = defineStore("map", {
 			});
 		},
 		ensureLayerLoaded(element, turnOnVisibility = false) {
-			const mapLayerId = `${element.index}-${element.type}-${element.city}`;
+			const mapLayerId = this.buildMapLayerId(element);
 			if (this.currentLayers.find((layerId) => layerId === mapLayerId)) {
 				if (turnOnVisibility) {
 					this.loadingLayers.push("rendering");
@@ -496,6 +496,12 @@ export const useMapStore = defineStore("map", {
 					([key]) => !runtimeKeys.includes(key),
 				),
 			);
+		},
+		buildMapLayerId(map_config) {
+			const uniquePart =
+				map_config.id ??
+				String(map_config.title || "layer").replace(/\s+/g, "_");
+			return `${map_config.index}-${map_config.type}-${map_config.city}-${uniquePart}`;
 		},
 		isPointLayer(map_config) {
 			return ["circle", "symbol"].includes(map_config.type);
@@ -718,6 +724,7 @@ export const useMapStore = defineStore("map", {
 				layout: {
 					...maplayerCommonLayout[`${map_config.type}`],
 					...extra_layout_configs,
+					...(map_config.layout || {}),
 					visibility: runtimeOptions.defaultVisibility,
 				},
 				source: `${map_config.layerId}-source`,
@@ -800,7 +807,7 @@ export const useMapStore = defineStore("map", {
 		AddArcMapLayer(map_config, data) {
 			// start loading
 			this.loadingLayers.push("rendering");
-			const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+			const mapLayerId = this.buildMapLayerId(map_config);
 			const paintSettings = map_config.paint
 				? map_config.paint
 				: { "arc-color": ["#ffffff"] };
@@ -1917,7 +1924,7 @@ export const useMapStore = defineStore("map", {
 		turnOffMapLayerVisibility(map_config) {
 			this.stopAnimation();
 			map_config.forEach((element) => {
-				let mapLayerId = `${element.index}-${element.type}-${element.city}`;
+				let mapLayerId = this.buildMapLayerId(element);
 				this.loadingLayers = this.loadingLayers.filter(
 					(el) => el !== mapLayerId,
 				);
@@ -1944,7 +1951,7 @@ export const useMapStore = defineStore("map", {
 				if (item.type === "symbol-3d") {
 					const customLayer =
 						this.customLayers[
-							`${item.index}-${item.type}-${item.city}`
+							this.buildMapLayerId(item)
 						];
 					if (customLayer?.carTooltip) {
 						customLayer.carTooltip.style.display = "none";
@@ -2391,7 +2398,7 @@ export const useMapStore = defineStore("map", {
 			const hasAreaAndPointLayers =
 				this.hasAreaAndPointLayers(map_configs);
 			const missingPointLayers = map_configs.filter((map_config) => {
-				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				const mapLayerId = this.buildMapLayerId(map_config);
 				return (
 					this.isPointLayer(map_config) &&
 					!this.currentLayers.includes(mapLayerId)
@@ -2405,7 +2412,7 @@ export const useMapStore = defineStore("map", {
 				);
 			}
 			map_configs.map((map_config) => {
-				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				let mapLayerId = this.buildMapLayerId(map_config);
 				const runtimeOptions =
 					this.getLayerRuntimeOptions(map_config);
 				if (map_config && map_config.type === "arc") {
@@ -2491,7 +2498,7 @@ export const useMapStore = defineStore("map", {
 				return;
 			}
 			map_configs.map((map_config) => {
-				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				let mapLayerId = this.buildMapLayerId(map_config);
 				if (map_config.title !== xParam) {
 					this.map.setLayoutProperty(
 						mapLayerId,
@@ -2516,7 +2523,7 @@ export const useMapStore = defineStore("map", {
 			const hasAreaAndPointLayers =
 				this.hasAreaAndPointLayers(map_configs);
 			map_configs.map((map_config) => {
-				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				let mapLayerId = this.buildMapLayerId(map_config);
 				const runtimeOptions =
 					this.getLayerRuntimeOptions(map_config);
 				if (map_config && map_config.type === "arc") {
@@ -2551,7 +2558,7 @@ export const useMapStore = defineStore("map", {
 				return;
 			}
 			const missingPointLayers = map_configs.filter((map_config) => {
-				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				const mapLayerId = this.buildMapLayerId(map_config);
 				return (
 					this.isPointLayer(map_config) &&
 					!this.currentLayers.includes(mapLayerId)
@@ -2565,7 +2572,7 @@ export const useMapStore = defineStore("map", {
 				);
 			}
 			map_configs.forEach((map_config) => {
-				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				const mapLayerId = this.buildMapLayerId(map_config);
 				if (!this.map.getLayer(mapLayerId)) {
 					return;
 				}
@@ -2584,7 +2591,7 @@ export const useMapStore = defineStore("map", {
 				return;
 			}
 			map_configs.map((map_config) => {
-				let mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				let mapLayerId = this.buildMapLayerId(map_config);
 				this.map.setLayoutProperty(mapLayerId, "visibility", "visible");
 			});
 		},

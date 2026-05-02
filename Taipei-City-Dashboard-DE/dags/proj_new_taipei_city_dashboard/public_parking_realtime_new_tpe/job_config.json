@@ -1,0 +1,37 @@
+{
+  "dag_infos": {
+    "dag_id": "public_parking_realtime_new_tpe",
+    "start_date": "2026-05-02",
+    "schedule_interval": "*/5 * * * *",
+    "catchup": false,
+    "tags": ["tran_parking_capacity_realtime_new_tpe", "新北市公有路外停車場", "即時剩餘車位"],
+    "description": "Realtime New Taipei public off-street parking availability aligned to Taipei D030104_1 naming.",
+    "default_args": {
+      "owner": "airflow",
+      "email": "DEFAULT_EMAIL_LIST",
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "tran_parking_capacity_realtime_new_tpe",
+    "ready_data_history_table": "tran_parking_capacity_realtime_new_tpe_history",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "current+history"
+  },
+  "data_infos": {
+    "name_cn": "新北市公有路外停車場即時賸餘車位數",
+    "airflow_update_freq": "every 5 minutes",
+    "source": "https://data.ntpc.gov.tw/datasets/e09b35a5-a738-48cc-b0f5-570b67ad9c78",
+    "source_type": "Open Data JSON",
+    "source_dept": "新北市政府交通局",
+    "gis_format": "",
+    "output_coordinate": "",
+    "is_geometry": 0,
+    "dataset_description": "新北市公有路外停車場即時剩餘汽車車位數。",
+    "etl_description": "download New Taipei realtime parking capacity, normalize remaining-car counts, and align columns to Taipei D030104_1",
+    "sensitivity": "public"
+  }
+}

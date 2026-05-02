@@ -1,0 +1,352 @@
+{
+  "component_maps": [
+    {
+      "key": "supply_taipei_parking",
+      "default_on": true,
+      "index": "parking_supply_points_taipei",
+      "title": "停車場",
+      "type": "circle",
+      "source": "geojson",
+      "size": null,
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "case",
+          ["all", ["==", ["get", "facility_kind"], "public_parking"], ["==", ["get", "city"], "taipei"]],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "occupancy_rate"]], -1], -1, "#9ca3af", 0, "#16a34a", 0.5, "#76a86c", 1, "#9ca3af"],
+          "rgba(0,0,0,0)"
+        ],
+        "circle-radius": [
+          "case",
+          ["all", ["==", ["get", "facility_kind"], "public_parking"], ["==", ["get", "city"], "taipei"]],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "capacity_total"]], 0], 0, 8, 50, 12, 150, 18, 400, 26, 1000, 36],
+          0
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.4,
+        "circle-opacity": 0.86
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "address", "name": "地址" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "available_total", "name": "空位" },
+        { "key": "occupancy_rate", "name": "已佔率" },
+        { "key": "status_label", "name": "狀態" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    },
+    {
+      "key": "supply_taipei_onstreet",
+      "default_on": true,
+      "index": "parking_supply_points_taipei",
+      "title": "路邊停車格",
+      "type": "circle",
+      "source": "geojson",
+      "size": null,
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "case",
+          ["all", ["==", ["get", "facility_kind"], "onstreet"], ["==", ["get", "city"], "taipei"]],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "occupancy_rate"]], -1], -1, "#9ca3af", 0, "#16a34a", 0.5, "#76a86c", 1, "#9ca3af"],
+          "rgba(0,0,0,0)"
+        ],
+        "circle-radius": [
+          "case",
+          ["all", ["==", ["get", "facility_kind"], "onstreet"], ["==", ["get", "city"], "taipei"]],
+          ["interpolate", ["linear"], ["zoom"], 10, 1.2, 12, 1.8, 14, 2.5, 16, 3.6],
+          0
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 0.8,
+        "circle-opacity": 0.72
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "address", "name": "地址" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "available_total", "name": "空位" },
+        { "key": "occupancy_rate", "name": "已佔率" },
+        { "key": "status_label", "name": "狀態" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    },
+    {
+      "key": "supply_metrotaipei_parking",
+      "default_on": true,
+      "index": "parking_supply_points_metrotaipei",
+      "title": "停車場",
+      "type": "circle",
+      "source": "geojson",
+      "size": null,
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "case",
+          ["==", ["get", "facility_kind"], "public_parking"],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "occupancy_rate"]], -1], -1, "#9ca3af", 0, "#16a34a", 0.5, "#76a86c", 1, "#9ca3af"],
+          "rgba(0,0,0,0)"
+        ],
+        "circle-radius": [
+          "case",
+          ["==", ["get", "facility_kind"], "public_parking"],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "capacity_total"]], 0], 0, 8, 50, 12, 150, 18, 400, 26, 1000, 36],
+          0
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.4,
+        "circle-opacity": 0.86
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "address", "name": "地址" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "available_total", "name": "空位" },
+        { "key": "occupancy_rate", "name": "已佔率" },
+        { "key": "status_label", "name": "狀態" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    },
+    {
+      "key": "supply_metrotaipei_onstreet",
+      "default_on": true,
+      "index": "parking_supply_points_metrotaipei",
+      "title": "路邊停車格",
+      "type": "circle",
+      "source": "geojson",
+      "size": null,
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "case",
+          ["==", ["get", "facility_kind"], "onstreet"],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "occupancy_rate"]], -1], -1, "#9ca3af", 0, "#16a34a", 0.5, "#76a86c", 1, "#9ca3af"],
+          "rgba(0,0,0,0)"
+        ],
+        "circle-radius": [
+          "case",
+          ["==", ["get", "facility_kind"], "onstreet"],
+          ["interpolate", ["linear"], ["zoom"], 10, 1.2, 12, 1.8, 14, 2.5, 16, 3.6],
+          0
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 0.8,
+        "circle-opacity": 0.72
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "address", "name": "地址" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "available_total", "name": "空位" },
+        { "key": "occupancy_rate", "name": "已佔率" },
+        { "key": "status_label", "name": "狀態" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    },
+    {
+      "key": "price_taipei_heat",
+      "default_on": true,
+      "index": "parking_supply_points_taipei",
+      "title": "價格熱區",
+      "type": "circle",
+      "source": "geojson",
+      "size": "heatmap",
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "case",
+          ["==", ["get", "city"], "taipei"],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "price_value"]], -1], -1, "rgba(0,0,0,0)", 0, "rgba(253,230,138,0.15)", 20, "#f59e0b", 40, "#f97316", 60, "#ef4444", 80, "#991b1b"],
+          "rgba(0,0,0,0)"
+        ],
+        "circle-radius": [
+          "case",
+          ["==", ["get", "city"], "taipei"],
+          ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", "price_value"]], -1], -1, 0, 0, 4, 20, 10, 40, 16, 60, 24, 80, 32],
+          0
+        ]
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "price_raw", "name": "費率原文" },
+        { "key": "price_tier_label", "name": "價格級距" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    },
+    {
+      "key": "price_metrotaipei_heat",
+      "default_on": true,
+      "index": "parking_supply_points_metrotaipei",
+      "title": "價格熱區",
+      "type": "circle",
+      "source": "geojson",
+      "size": "heatmap",
+      "icon": null,
+      "paint": {
+        "circle-color": [
+          "interpolate",
+          ["linear"],
+          ["coalesce", ["to-number", ["get", "price_value"]], -1],
+          -1, "rgba(0,0,0,0)",
+          0, "rgba(253,230,138,0.15)",
+          20, "#f59e0b",
+          40, "#f97316",
+          60, "#ef4444",
+          80, "#991b1b"
+        ],
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["coalesce", ["to-number", ["get", "price_value"]], -1],
+          -1, 0,
+          0, 4,
+          20, 10,
+          40, 16,
+          60, 24,
+          80, 32
+        ]
+      },
+      "property": [
+        { "key": "facility_kind_label", "name": "點位種類" },
+        { "key": "city_label", "name": "城市" },
+        { "key": "district", "name": "行政區" },
+        { "key": "display_name", "name": "名稱" },
+        { "key": "type_reference", "name": "類型" },
+        { "key": "price_raw", "name": "費率原文" },
+        { "key": "price_tier_label", "name": "價格級距" },
+        { "key": "capacity_total", "name": "最大容量" },
+        { "key": "data_time", "name": "更新時間" }
+      ]
+    }
+  ],
+  "components": [
+    { "index": "parking_supply_metrotaipei", "name": "雙北停車點位供給與類型" },
+    { "index": "parking_price_metrotaipei", "name": "雙北停車場價格分布" }
+  ],
+  "component_charts": [
+    {
+      "index": "parking_supply_metrotaipei",
+      "color": ["#2563eb", "#94a3b8"],
+      "types": ["ColumnChart"],
+      "unit": "格"
+    },
+    {
+      "index": "parking_price_metrotaipei",
+      "color": ["#b45309", "#7c2d12"],
+      "types": ["ColumnChart"],
+      "unit": "格"
+    }
+  ],
+  "query_charts": [
+    {
+      "index": "parking_supply_metrotaipei",
+      "city": "taipei",
+      "query_type": "three_d",
+      "map_config_keys": ["supply_taipei_parking", "supply_taipei_onstreet"],
+      "map_filter": { "mode": "byParam", "byParam": { "xParam": "type_reference", "yParam": null } },
+      "time_from": "current",
+      "time_to": null,
+      "update_freq": 10,
+      "update_freq_unit": "minute",
+      "source": "雙北停車點位整併資料",
+      "short_desc": "地圖同時顯示停車場與路邊停車格，圓大小表達容量，綠到灰表達已佔程度。",
+      "long_desc": "臺北市地圖同時呈現停車場與路邊停車格精確點位；停車場以較大圓突出容量，路邊停車格以較小圓補足單格位置，圖表則比較各類型在不同點位種類中的供給量。",
+      "use_case": "適合先看空間上哪裡有大型停車場、哪裡是密集路邊格，再用圖表篩出想看的類型。",
+      "links": ["https://data.taipei/", "https://tdx.transportdata.tw/"],
+      "contributors": ["codex"],
+      "query_chart": "SELECT type_reference AS x_axis, facility_kind_label AS y_axis, SUM(capacity_total)::float AS data FROM public.tran_parking_supply_points_metrotaipei WHERE city = 'taipei' GROUP BY type_reference, facility_kind_label ORDER BY x_axis, array_position(ARRAY['停車場','路邊車格'], facility_kind_label)"
+    },
+    {
+      "index": "parking_supply_metrotaipei",
+      "city": "metrotaipei",
+      "query_type": "three_d",
+      "map_config_keys": ["supply_metrotaipei_parking", "supply_metrotaipei_onstreet"],
+      "map_filter": { "mode": "byParam", "byParam": { "xParam": "type_reference", "yParam": null } },
+      "time_from": "current",
+      "time_to": null,
+      "update_freq": 10,
+      "update_freq_unit": "minute",
+      "source": "雙北停車點位整併資料",
+      "short_desc": "地圖同時顯示雙北停車場與路邊停車格，圓大小表達容量，綠到灰表達已佔程度。",
+      "long_desc": "雙北地圖同時呈現停車場與路邊停車格精確點位；停車場以較大圓突出容量，路邊停車格以較小圓補足單格位置，圖表則比較各類型在不同點位種類中的供給量。",
+      "use_case": "先看雙北整體點位供給密度，再以圖表篩出車位類型並回看地圖。",
+      "links": ["https://data.taipei/", "https://data.ntpc.gov.tw/", "https://tdx.transportdata.tw/"],
+      "contributors": ["codex"],
+      "query_chart": "SELECT type_reference AS x_axis, facility_kind_label AS y_axis, SUM(capacity_total)::float AS data FROM public.tran_parking_supply_points_metrotaipei GROUP BY type_reference, facility_kind_label ORDER BY x_axis, array_position(ARRAY['停車場','路邊車格'], facility_kind_label)"
+    },
+    {
+      "index": "parking_price_metrotaipei",
+      "city": "taipei",
+      "query_type": "three_d",
+      "map_config_keys": ["price_taipei_heat"],
+      "map_filter": { "mode": "byParam", "byParam": { "xParam": "price_tier_label", "yParam": null } },
+      "time_from": "current",
+      "time_to": null,
+      "update_freq": 10,
+      "update_freq_unit": "minute",
+      "source": "雙北停車點位整併資料",
+      "short_desc": "地圖以價格熱區呈現高價停車點位，顏色越熱代表費率越高。",
+      "long_desc": "臺北市價格地圖以精確停車點位為基礎，把高價停車場與路邊格位聚成熱區；圖表則比較不同價格級距在停車場與路邊停車格中的供給量。",
+      "use_case": "適合先找出價格偏高的熱點區，再看該區是停車場還是路邊停車格主導。",
+      "links": ["https://data.taipei/", "https://tdx.transportdata.tw/"],
+      "contributors": ["codex"],
+      "query_chart": "SELECT price_tier_label AS x_axis, facility_kind_label AS y_axis, SUM(capacity_total)::float AS data FROM public.tran_parking_supply_points_metrotaipei WHERE city = 'taipei' AND price_tier <> 'unknown' GROUP BY price_tier_label, facility_kind_label ORDER BY array_position(ARRAY['免費/未收費','低價','中價','高價','極高價'], price_tier_label), array_position(ARRAY['停車場','路邊車格'], facility_kind_label)"
+    },
+    {
+      "index": "parking_price_metrotaipei",
+      "city": "metrotaipei",
+      "query_type": "three_d",
+      "map_config_keys": ["price_metrotaipei_heat"],
+      "map_filter": { "mode": "byParam", "byParam": { "xParam": "price_tier_label", "yParam": null } },
+      "time_from": "current",
+      "time_to": null,
+      "update_freq": 10,
+      "update_freq_unit": "minute",
+      "source": "雙北停車點位整併資料",
+      "short_desc": "地圖以價格熱區呈現雙北高價停車點位，顏色越熱代表費率越高。",
+      "long_desc": "雙北價格地圖以精確停車點位為基礎，把高價停車場與路邊格位聚成熱區；圖表則比較不同價格級距在停車場與路邊停車格中的供給量。",
+      "use_case": "先比較雙北高價停車熱點，再看各價格級距主要落在停車場或路邊格位。",
+      "links": ["https://data.taipei/", "https://data.ntpc.gov.tw/", "https://tdx.transportdata.tw/"],
+      "contributors": ["codex"],
+      "query_chart": "SELECT price_tier_label AS x_axis, facility_kind_label AS y_axis, SUM(capacity_total)::float AS data FROM public.tran_parking_supply_points_metrotaipei WHERE price_tier <> 'unknown' GROUP BY price_tier_label, facility_kind_label ORDER BY array_position(ARRAY['免費/未收費','低價','中價','高價','極高價'], price_tier_label), array_position(ARRAY['停車場','路邊車格'], facility_kind_label)"
+    }
+  ],
+  "dashboards": [
+    {
+      "index": "tourism_parking_planning_taipei",
+      "name": "停車點位供給與價格",
+      "icon": "local_parking",
+      "group_id": 2,
+      "component_indices": ["parking_supply_metrotaipei", "parking_price_metrotaipei"]
+    },
+    {
+      "index": "tourism_parking_planning_metrotaipei",
+      "name": "停車點位供給與價格",
+      "icon": "local_parking",
+      "group_id": 3,
+      "component_indices": ["parking_supply_metrotaipei", "parking_price_metrotaipei"]
+    }
+  ]
+}

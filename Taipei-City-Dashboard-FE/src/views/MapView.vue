@@ -34,6 +34,11 @@ const toggleOn = ref({
 	basicLayer: [],
 });
 
+const DEFAULT_VISIBLE_COMPONENTS = new Set([
+	"parking_supply_metrotaipei",
+	"parking_price_metrotaipei",
+]);
+
 // Separate components with maps from those without
 const parseMapLayers = computed(() => {
 	const hasMap = contentStore.currentDashboard.components?.filter(
@@ -46,26 +51,64 @@ const parseMapLayers = computed(() => {
 	return { hasMap: hasMap, noMap: noMap };
 });
 
+function shouldEnableByDefault(component) {
+	return Boolean(
+		DEFAULT_VISIBLE_COMPONENTS.has(component?.index) ||
+			component?.map_config?.some((config) => config?.default_on === true),
+	);
+}
+
+function buildToggleDefaults(components = []) {
+	return components.map((component) => shouldEnableByDefault(component));
+}
+
+function resetToggleState() {
+	toggleOn.value = {
+		hasMap: buildToggleDefaults(parseMapLayers.value.hasMap),
+		noMap: new Array(parseMapLayers.value.noMap?.length || 0).fill(false),
+		mapLayer: buildToggleDefaults(
+			contentStore.currentDashboard.components || [],
+		),
+		basicLayer: buildToggleDefaults(contentStore.mapLayers || []),
+	};
+}
+
 watch(
 	() => route.query.index,
 	(newIndex, oldIndex) => {
 		if (newIndex !== oldIndex) {
-			toggleOn.value = {
-				hasMap: new Array(parseMapLayers.value.hasMap?.length).fill(
-					false,
-				),
-				noMap: new Array(parseMapLayers.value.noMap?.length).fill(
-					false,
-				),
-				mapLayer: new Array(
-					contentStore.currentDashboard.components?.length,
-				).fill(false),
-				basicLayer: new Array(contentStore.mapLayers?.length).fill(
-					false,
-				),
-			};
+			resetToggleState();
 		}
 	},
+);
+
+watch(
+	() => ({
+		dashboardIndex: route.query.index,
+		hasMapSignature: (parseMapLayers.value.hasMap || [])
+			.map((item) => `${item.id}:${shouldEnableByDefault(item)}`)
+			.join("|"),
+		basicLayerSignature: (contentStore.mapLayers || [])
+			.map((item) => `${item.id}:${shouldEnableByDefault(item)}`)
+			.join("|"),
+		mapReady: Boolean(mapStore.map),
+	}),
+	({ mapReady }) => {
+		resetToggleState();
+		if (!mapReady) return;
+
+		parseMapLayers.value.hasMap?.forEach((item) => {
+			if (shouldEnableByDefault(item)) {
+				mapStore.addToMapLayerList(item.map_config);
+			}
+		});
+		contentStore.mapLayers?.forEach((item) => {
+			if (shouldEnableByDefault(item)) {
+				mapStore.addToMapLayerList(item.map_config);
+			}
+		});
+	},
+	{ immediate: true },
 );
 
 function handleOpenSettings() {
@@ -112,7 +155,7 @@ function toggleSwitchBtn(value, Btn, BtnIndex) {
 
 function shouldDisable(map_config) {
 	const allMapLayerIds = map_config.map(
-		(el) => `${el.index}-${el.type}-${el.city}`,
+		(el) => mapStore.buildMapLayerId(el),
 	);
 	if (mapStore.isPreloading === true) {
 		return true;

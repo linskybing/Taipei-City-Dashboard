@@ -15,6 +15,7 @@ import router from "../router/index";
 import { useDialogStore } from "./dialogStore";
 import { useAuthStore } from "./authStore";
 import { getComponentDataTimeframe } from "../assets/utilityFunctions/dataTimeframe";
+import { normalizeLocalParkingMapConfig } from "../assets/utilityFunctions/parkingMapConfig";
 import { CityManager } from "../dashboardComponent/utilities/cityManager";
 
 export const useContentStore = defineStore("content", {
@@ -258,7 +259,9 @@ export const useContentStore = defineStore("content", {
 				const response = await http.get(
 					`/dashboard/${this.currentDashboard.index}`,
 				);
-				this.cityDashboard.components = response.data.data || [];
+				this.cityDashboard.components = (response.data.data || []).map(
+					normalizeLocalParkingMapConfig,
+				);
 				this.filterCurrentDashboardContent();
 			} catch (error) {
 				console.error("Error getting dashboard index data:", error);
@@ -745,7 +748,9 @@ export const useContentStore = defineStore("content", {
 						},
 					);
 
-					this.allMapLayers = filteredMapLayersData;
+					this.allMapLayers = filteredMapLayersData.map(
+						normalizeLocalParkingMapConfig,
+					);
 					// Get chart_data for all layers
 					await this.setMapLayersContent(cityValue);
 				} else {
