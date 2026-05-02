@@ -89,7 +89,7 @@ func crossCityResolutionNote(dropCount int, preview []cityResolutionDropPreview)
 		labels = append(labels, cityResolutionDropLabel(item))
 	}
 	return fmt.Sprintf("另有 %d 個相近候選只在其他城市有對應組件，例如 %s；因目前指定城市找不到同 index 組件已先排除。這不代表沒有相近主題，可改指定另一城市或使用 compare_city_components 再確認。", dropCount, strings.Join(labels, "、"))
-	}
+}
 
 func cityResolutionDropLabel(item cityResolutionDropPreview) string {
 	if item.Index != "" && item.Name != "" {

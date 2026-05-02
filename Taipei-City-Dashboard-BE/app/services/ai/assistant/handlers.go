@@ -29,9 +29,9 @@ func init() {
 
 func SearchComponents(ctx context.Context, args string) (string, error) {
 	var input struct {
-		Query          string  `json:"query"`
-		Theme          string  `json:"theme"`
-		City           string  `json:"city"`
+		Query          string   `json:"query"`
+		Theme          string   `json:"theme"`
+		City           string   `json:"city"`
 		Limit          *int     `json:"limit"`
 		ScoreThreshold *float64 `json:"score_threshold"`
 	}

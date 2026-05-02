@@ -44,8 +44,8 @@ func boundedFloat(value float64, fallback float64, min float64, max float64) flo
 }
 
 type filteredComponents struct {
-	related                 []RelatedComponent
-	cityResolutionDropCount int
+	related                   []RelatedComponent
+	cityResolutionDropCount   int
 	cityResolutionDropPreview []cityResolutionDropPreview
 }
 

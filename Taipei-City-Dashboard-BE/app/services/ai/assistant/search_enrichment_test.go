@@ -36,7 +36,7 @@ func TestFilterComponentsResolvesRequestedCityVariant(t *testing.T) {
 	if filtered.cityResolutionDropCount != 0 {
 		t.Fatalf("drop count = %d, want 0", filtered.cityResolutionDropCount)
 	}
-	}
+}
 
 func TestFilterComponentsReportsCrossCityResolutionDrop(t *testing.T) {
 	items := []models.CityComponentScore{{
