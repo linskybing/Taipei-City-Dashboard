@@ -58,6 +58,10 @@ function handleMoreInfo(item) {
   		})
 	}
 
+	if (Object.keys(contentStore.contributors).length === 0) {
+		contentStore.setContributors();
+	}
+
 	if (authStore.isMobileDevice && authStore.isNarrowDevice) {
 		router.push({
 			name: "component-info",

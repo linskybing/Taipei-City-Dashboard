@@ -95,6 +95,17 @@ function handleToggle(value, map_config) {
 	}
 }
 
+function handleShowAllPoints(map_config) {
+	mapStore.showAllPointLayers(map_config);
+}
+
+function handleMoreInfo(item) {
+	if (Object.keys(contentStore.contributors).length === 0) {
+		contentStore.setContributors();
+	}
+	dialogStore.showMoreInfo(item);
+}
+
 function toggleSwitchBtn(value, Btn, BtnIndex) {
 	toggleOn.value[Btn][BtnIndex] = value;
 }
@@ -174,11 +185,7 @@ function popularBasicLayerGA(map_config) {
           "
           :toggle-disable="shouldDisable(item.map_config)"
           :toggle-on="toggleOn.mapLayer[arrayIdx]"
-          @info="
-            (item) => {
-              dialogStore.showMoreInfo(item);
-            }
-          "
+          @info="handleMoreInfo"
           @toggle="
             (value, map_config) => {
               handleToggle(value, map_config);
@@ -186,6 +193,7 @@ function popularBasicLayerGA(map_config) {
               popularThematicLayerGA(map_config);
             }
           "
+          @show-all-points="handleShowAllPoints"
           @filter-by-param="
             (map_filter, map_config, x, y) => {
               mapStore.filterByParam(
@@ -289,11 +297,7 @@ function popularBasicLayerGA(map_config) {
           "
           :toggle-disable="shouldDisable(item.map_config)"
           :toggle-on="toggleOn.hasMap[arrayIdx]"
-          @info="
-            (item) => {
-              dialogStore.showMoreInfo(item);
-            }
-          "
+          @info="handleMoreInfo"
           @toggle="
             (value, map_config) => {
               handleToggle(value, map_config);
@@ -301,6 +305,7 @@ function popularBasicLayerGA(map_config) {
               popularThematicLayerGA(map_config);
             }
           "
+          @show-all-points="handleShowAllPoints"
           @filter-by-param="
             (map_filter, map_config, x, y) => {
               mapStore.filterByParam(
@@ -395,11 +400,7 @@ function popularBasicLayerGA(map_config) {
           "
           :toggle-disable="shouldDisable(item.map_config)"
           :toggle-on="toggleOn.basicLayer[arrayIdx]"
-          @info="
-            (item) => {
-              dialogStore.showMoreInfo(item);
-            }
-          "
+          @info="handleMoreInfo"
           @toggle="
             (value, map_config) => {
               handleToggle(value, map_config);
@@ -407,6 +408,7 @@ function popularBasicLayerGA(map_config) {
               popularBasicLayerGA(map_config);
             }
           "
+          @show-all-points="handleShowAllPoints"
           @filter-by-param="
             (map_filter, map_config, x, y) => {
               mapStore.filterByParam(
@@ -498,11 +500,7 @@ function popularBasicLayerGA(map_config) {
               : contentStore.cityManager.getTagList(item.city)
           "
           :toggle-on="toggleOn.noMap[arrayIdx]"
-          @info="
-            (item) => {
-              dialogStore.showMoreInfo(item);
-            }
-          "
+          @info="handleMoreInfo"
           @toggle="
             (value, map_config) => {
               handleToggle(value, map_config);

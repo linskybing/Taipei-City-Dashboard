@@ -35,6 +35,12 @@ const searchParams = ref({
 	pagenum: 1,
 });
 
+function getAvailableContributors(item) {
+	return (item?.contributors || [])
+		.map((userId) => contentStore.contributors[userId])
+		.filter(Boolean);
+}
+
 function toggleFavorite(id,name,city) {
 	if (contentStore.favorites.components.includes(id)) {
 		contentStore.unfavoriteComponent(id);
@@ -202,36 +208,29 @@ onMounted(() => {
               <p>{{ link }}</p></a>
           </div>
           <div
-            v-if="item.contributors"
+            v-if="getAvailableContributors(item).length > 0"
             class="componentinfoview-source-contributors"
           >
             <h3>協作者</h3>
             <div>
               <div
-                v-for="contributor in item
-                  .contributors"
-                :key="contributor"
+                v-for="contributor in getAvailableContributors(item)"
+                :key="contributor.user_id"
               >
                 <a
-                  :href="contentStore.contributors[contributor]?.link"
+                  :href="contributor.link"
                   target="_blank"
                   rel="noreferrer"
                 ><img
                    :src="
-                     contentStore.contributors[
-                       contributor
-                     ]?.image.includes('http')
-                       ? contentStore.contributors[contributor]
-                         .image
-                       : `/images/contributors/${contentStore.contributors[contributor].image}`
+                     contributor.image.includes('http')
+                       ? contributor.image
+                       : `/images/contributors/${contributor.image}`
                    "
-                   :alt="`協作者-${contentStore.contributors[contributor].user_name}`"
+                   :alt="`協作者-${contributor.user_name}`"
                  >
                   <p>
-                    {{
-                      contentStore.contributors[contributor]
-                        .user_name
-                    }}
+                    {{ contributor.user_name }}
                   </p>
                 </a>
               </div>

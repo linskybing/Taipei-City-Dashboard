@@ -1,0 +1,43 @@
+{
+  "dag_infos": {
+    "dag_id": "traffic_todayworks_ntpe",
+    "start_date": "2026-05-02",
+    "schedule_interval": "15 0 * * *",
+    "catchup": false,
+    "tags": [
+      "traffic_todayworks",
+      "道路施工",
+      "新北市"
+    ],
+    "description": "Daily New Taipei road excavation ETL with TWD97 conversion and Google geocoding fallback.",
+    "default_args": {
+      "owner": "airflow",
+      "email": [
+        "DEFAULT_EMAIL_LIST"
+      ],
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "traffic_todayworks_ntpe",
+    "ready_data_history_table": "traffic_todayworks_ntpe_history",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "current+history"
+  },
+  "data_infos": {
+    "name_cn": "新北市政府道路挖掘資訊",
+    "airflow_update_freq": "daily",
+    "source": "https://data.ntpc.gov.tw/datasets/96b6101b-c033-4834-8bd5-e312651db7a0",
+    "source_type": "data.ntpc.gov.tw json",
+    "source_dept": "新北市政府工務局",
+    "gis_format": "Point",
+    "output_coordinate": "EPSG:4326",
+    "is_geometry": 1,
+    "dataset_description": "新北市道路挖掘案件資訊，保留原始案號與施工欄位，並統一為雙北儀表板可對齊的施工資料欄位。",
+    "etl_description": "load New Taipei JSON API, standardize ROC dates, convert TWD97 when available, geocode missing coordinates with Google, and build WKB geometry",
+    "sensitivity": "public"
+  }
+}

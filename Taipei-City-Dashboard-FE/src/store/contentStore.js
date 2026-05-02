@@ -688,7 +688,7 @@ export const useContentStore = defineStore("content", {
 		},
 		// 6. Call an API to get contributor data (result consists of id, name, link)
 		setContributors() {
-			http.get(`/contributor/`)
+			return http.get(`/contributor/`)
 				.then((rs) => {
 					const contributors = {};
 					rs.data.data.forEach((item) => {

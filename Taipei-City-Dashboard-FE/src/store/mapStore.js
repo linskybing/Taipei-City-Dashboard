@@ -2537,6 +2537,46 @@ export const useMapStore = defineStore("map", {
 				}
 			});
 		},
+		async showAllPointLayers(map_configs) {
+			const dialogStore = useDialogStore();
+			if (
+				!this.map ||
+				dialogStore.dialogs.moreInfo ||
+				!Array.isArray(map_configs) ||
+				map_configs.length === 0
+			) {
+				return;
+			}
+			if (!this.hasAreaAndPointLayers(map_configs)) {
+				return;
+			}
+			const missingPointLayers = map_configs.filter((map_config) => {
+				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				return (
+					this.isPointLayer(map_config) &&
+					!this.currentLayers.includes(mapLayerId)
+				);
+			});
+			if (missingPointLayers.length > 0) {
+				await Promise.all(
+					missingPointLayers.map((map_config) =>
+						this.ensureLayerLoaded(map_config),
+					),
+				);
+			}
+			map_configs.forEach((map_config) => {
+				const mapLayerId = `${map_config.index}-${map_config.type}-${map_config.city}`;
+				if (!this.map.getLayer(mapLayerId)) {
+					return;
+				}
+				this.map.setFilter(mapLayerId, null);
+				if (map_config.type === "fill") {
+					this.setLayerVisibility(mapLayerId, "none");
+				} else if (this.isPointLayer(map_config)) {
+					this.setLayerVisibility(mapLayerId, "visible");
+				}
+			});
+		},
 		// 4. Remove any layer filters on a map layer.
 		clearByLayerFilter(map_configs) {
 			const dialogStore = useDialogStore();
