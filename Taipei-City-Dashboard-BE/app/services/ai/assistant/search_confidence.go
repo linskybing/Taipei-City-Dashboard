@@ -11,10 +11,10 @@ const (
 )
 
 const (
-	highScoreWithAnyToken  = 0.86
-	highScoreWithTwoTokens = 0.84
-	mediumScoreThreshold   = 0.82
-	mediumGapThreshold     = 0.03
+	highScoreWithAnyToken  = 0.85
+	highScoreWithTwoTokens = 0.60
+	mediumScoreThreshold   = 0.50
+	mediumGapThreshold     = 0.1
 )
 
 type searchConfidenceAssessment struct {

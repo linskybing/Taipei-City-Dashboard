@@ -121,11 +121,28 @@ const canShowAllPoints = computed(() => {
 		return false;
 	}
 	const mapConfigs = props.config.map_config || [];
-	return (
-		mapConfigs.some((item) => item?.type === "fill") &&
-		mapConfigs.some((item) => ["circle", "symbol"].includes(item?.type))
+	return mapConfigs.some((item) =>
+		["circle", "symbol"].includes(item?.type),
 	);
 });
+const canLoadAllDistrictChunks = computed(() => {
+	return (
+		props.mode.includes("map") &&
+		props.config.index === "parking_difficulty_spectrum_metrotaipei" &&
+		(props.config.map_config || []).some(
+			(item) => item?.title === "停車難易度",
+		)
+	);
+});
+const canShowPointAction = computed(
+	() => canShowAllPoints.value || canLoadAllDistrictChunks.value,
+);
+const pointActionLabel = computed(() =>
+	canLoadAllDistrictChunks.value ? "全區載入" : "全部點位",
+);
+const pointActionTitle = computed(() =>
+	canLoadAllDistrictChunks.value ? "分區批次載入全部難易度點位" : "顯示全部點位",
+);
 
 // Parses time data into display format
 const dataTime = computed(() => {
@@ -348,9 +365,9 @@ function returnChartComponent(name, svg) {
         class="dashboardcomponent-header-toggle"
       >
         <button
-          v-if="canShowAllPoints"
+          v-if="canShowPointAction"
           class="dashboardcomponent-header-toggle-action"
-          title="顯示全部點位"
+          :title="pointActionTitle"
           @click="handleShowAllPoints"
         >
           <span>blur_on</span>
@@ -390,12 +407,12 @@ function returnChartComponent(name, svg) {
         </template>
       </select>
       <button
-        v-if="canShowAllPoints && mode.includes('map')"
+        v-if="canShowPointAction && mode.includes('map')"
         class="dashboardcomponent-control-points"
         @click="handleShowAllPoints"
       >
         <span>blur_on</span>
-        <p>全部點位</p>
+        <p>{{ pointActionLabel }}</p>
       </button>
       <div
         v-if="config.chart_config.types.length > 1"

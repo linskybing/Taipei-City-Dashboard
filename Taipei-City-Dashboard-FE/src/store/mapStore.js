@@ -90,6 +90,8 @@ export const useMapStore = defineStore("map", {
 		userLocation: { latitude: null, longitude: null },
 		nearestPointRecommendation: null,
 		constructionSiteCache: {},
+		parkingDifficultySourceFeatures: {},
+		parkingDifficultyLoadedManifests: {},
 		// 3D Mrt Map 相關參數
 		// 模型及圖徵是否預載中
 		isPreloading: true,
@@ -431,7 +433,6 @@ export const useMapStore = defineStore("map", {
 		addToMapLayerList(map_config) {
 			map_config.forEach((element) => {
 				const shouldDeferPointLayer =
-					this.hasAreaAndPointLayers(map_config) &&
 					this.isPointLayer(element) &&
 					this.getLayerRuntimeOptions(element).defaultVisibility ===
 						"none";
@@ -484,8 +485,23 @@ export const useMapStore = defineStore("map", {
 		isParkingDifficultyLayer(map_config) {
 			return map_config.title === "停車難易度";
 		},
+		getDifficultyInitialDistrict() {
+			return "萬華區";
+		},
+		getDifficultyBucket(score) {
+			if (score < 35) return "容易";
+			if (score < 55) return "普通";
+			if (score < 75) return "偏難";
+			return "困難";
+		},
+		getDifficultyManifestIndex(map_config) {
+			return map_config.index.replace(/_wanhua$/, "_manifest");
+		},
 		getConstructionSiteIndex(map_config) {
-			return map_config.index === "parking_supply_points_taipei"
+			return [
+				"parking_supply_points_taipei",
+				"parking_difficulty_points_taipei_wanhua",
+			].includes(map_config.index)
 				? "traffic_construction_sites_taipei"
 				: "traffic_construction_sites_metrotaipei";
 		},
@@ -502,24 +518,39 @@ export const useMapStore = defineStore("map", {
 			}
 			return this.constructionSiteCache[index];
 		},
+		async scoreParkingDifficultyFeatures(map_config, features) {
+			const constructionFeatures = await this.getConstructionSites(map_config);
+			return features.map((feature) => {
+				const nearbyConstructionCount = countNearbyConstructionSites(
+					feature,
+					constructionFeatures,
+				);
+				const properties = {
+					...(feature.properties || {}),
+					nearby_construction_count: nearbyConstructionCount,
+				};
+				properties.difficulty_score =
+					getParkingDifficultyScore(properties);
+				properties.difficulty_bucket = this.getDifficultyBucket(
+					properties.difficulty_score,
+				);
+				return { ...feature, properties };
+			});
+		},
 		async prepareLocalGeoJson(map_config, data) {
 			if (!this.isParkingDifficultyLayer(map_config)) return data;
-			const constructionFeatures = await this.getConstructionSites(map_config);
+			const defaultDistrict = this.getDifficultyInitialDistrict();
+			const features = (data.features || []).filter(
+				(feature) =>
+					feature?.properties?.district === defaultDistrict ||
+					feature?.properties?.district_display === defaultDistrict,
+			);
 			return {
 				...data,
-				features: (data.features || []).map((feature) => {
-					const nearbyConstructionCount = countNearbyConstructionSites(
-						feature,
-						constructionFeatures,
-					);
-					const properties = {
-						...(feature.properties || {}),
-						nearby_construction_count: nearbyConstructionCount,
-					};
-					properties.difficulty_score =
-						getParkingDifficultyScore(properties);
-					return { ...feature, properties };
-				}),
+				features: await this.scoreParkingDifficultyFeatures(
+					map_config,
+					features,
+				),
 			};
 		},
 		getLayerRuntimeOptions(map_config) {
@@ -547,6 +578,12 @@ export const useMapStore = defineStore("map", {
 					([key]) => !runtimeKeys.includes(key),
 				),
 			);
+		},
+		mergeMapFilters(baseFilter, dynamicFilter) {
+			if (baseFilter && dynamicFilter) {
+				return ["all", baseFilter, dynamicFilter];
+			}
+			return dynamicFilter || baseFilter || null;
 		},
 		buildMapLayerId(map_config) {
 			const uniquePart =
@@ -586,6 +623,10 @@ export const useMapStore = defineStore("map", {
 				!["voronoi", "isoline"].includes(map_config.type) &&
 				map_config.type !== "symbol-3d"
 			) {
+				if (this.isParkingDifficultyLayer(map_config)) {
+					this.parkingDifficultySourceFeatures[map_config.layerId] =
+						data.features || [];
+				}
 				this.map.addSource(`${map_config.layerId}-source`, {
 					type: "geojson",
 					data: { ...data },
@@ -797,6 +838,8 @@ export const useMapStore = defineStore("map", {
 					"wee_hazard_water_tp-fill-extrusion-taipei"
 			) {
 				config.filter = initialFilter;
+			} else if (map_config.filter) {
+				config.filter = map_config.filter;
 			}
 			this.map.addLayer(config);
 			if (
@@ -2042,12 +2085,19 @@ export const useMapStore = defineStore("map", {
 				[event.point.x - hitSize, event.point.y - hitSize],
 				[event.point.x + hitSize, event.point.y + hitSize],
 			];
+			const visibleLayers = this.currentVisibleLayers.filter((layer) => {
+				if (layer.indexOf("-arc") !== -1 || !this.map.getLayer(layer)) {
+					return false;
+				}
+				return (
+					this.map.getLayoutProperty(layer, "visibility") !== "none"
+				);
+			});
+			if (visibleLayers.length === 0) return;
 
 			// Gets the info that is contained in the coordinates that the user clicked on (only visible layers)
 			const clickFeatureDatas = this.map.queryRenderedFeatures(bbox, {
-				layers: this.currentVisibleLayers.filter(
-					(layer) => layer.indexOf("-arc") === -1,
-				),
+				layers: visibleLayers,
 			});
 
 			// Return if there is no info in the click
@@ -2513,7 +2563,7 @@ export const useMapStore = defineStore("map", {
 				}
 				if (hasAreaAndPointLayers) {
 					if (map_config.type === "fill") {
-						this.map.setFilter(mapLayerId, null);
+						this.map.setFilter(mapLayerId, map_config.filter || null);
 						this.setLayerVisibility(mapLayerId, "none");
 						return;
 					}
@@ -2530,27 +2580,48 @@ export const useMapStore = defineStore("map", {
 					xParam &&
 					yParam
 				) {
-					this.map.setFilter(mapLayerId, [
+					const dynamicFilter = [
 						"all",
 						["==", ["get", map_filter.byParam.xParam], xParam],
 						["==", ["get", map_filter.byParam.yParam], yParam],
-					]);
+					];
+					this.map.setFilter(
+						mapLayerId,
+						this.mergeMapFilters(
+							map_config.filter,
+							dynamicFilter,
+						),
+					);
 				}
 				// If only y exists, filter by y
 				else if (map_filter.byParam.yParam && yParam) {
-					this.map.setFilter(mapLayerId, [
+					const dynamicFilter = [
 						"==",
 						["get", map_filter.byParam.yParam],
 						yParam,
-					]);
+					];
+					this.map.setFilter(
+						mapLayerId,
+						this.mergeMapFilters(
+							map_config.filter,
+							dynamicFilter,
+						),
+					);
 				}
 				// default to filter by x
 				else if (map_filter.byParam.xParam && xParam) {
-					this.map.setFilter(mapLayerId, [
+					const dynamicFilter = [
 						"==",
 						["get", map_filter.byParam.xParam],
 						xParam,
-					]);
+					];
+					this.map.setFilter(
+						mapLayerId,
+						this.mergeMapFilters(
+							map_config.filter,
+							dynamicFilter,
+						),
+					);
 				}
 			});
 		},
@@ -2600,7 +2671,7 @@ export const useMapStore = defineStore("map", {
 				if (!this.map.getLayer(mapLayerId)) {
 					return;
 				}
-				this.map.setFilter(mapLayerId, null);
+				this.map.setFilter(mapLayerId, map_config.filter || null);
 				if (hasAreaAndPointLayers) {
 					if (map_config.type === "fill") {
 						this.setLayerVisibility(mapLayerId, "visible");
@@ -2622,9 +2693,19 @@ export const useMapStore = defineStore("map", {
 			) {
 				return;
 			}
-			if (!this.hasAreaAndPointLayers(map_configs)) {
+			const difficultyConfigs = map_configs.filter((map_config) =>
+				this.isParkingDifficultyLayer(map_config),
+			);
+			if (difficultyConfigs.length > 0) {
+				await Promise.all(
+					difficultyConfigs.map((map_config) =>
+						this.loadAllParkingDifficultyDistricts(map_config),
+					),
+				);
 				return;
 			}
+			const hasAreaAndPointLayers =
+				this.hasAreaAndPointLayers(map_configs);
 			const missingPointLayers = map_configs.filter((map_config) => {
 				const mapLayerId = this.buildMapLayerId(map_config);
 				return (
@@ -2644,13 +2725,81 @@ export const useMapStore = defineStore("map", {
 				if (!this.map.getLayer(mapLayerId)) {
 					return;
 				}
-				this.map.setFilter(mapLayerId, null);
-				if (map_config.type === "fill") {
+				this.map.setFilter(mapLayerId, map_config.filter || null);
+				if (hasAreaAndPointLayers && map_config.type === "fill") {
 					this.setLayerVisibility(mapLayerId, "none");
 				} else if (this.isPointLayer(map_config)) {
 					this.setLayerVisibility(mapLayerId, "visible");
 				}
 			});
+		},
+		async loadAllParkingDifficultyDistricts(map_config) {
+			const mapLayerId = this.buildMapLayerId(map_config);
+			if (!this.currentLayers.includes(mapLayerId)) {
+				await this.ensureLayerLoaded(map_config);
+			}
+			if (!this.map.getLayer(mapLayerId)) {
+				return;
+			}
+			this.map.setFilter(mapLayerId, null);
+			this.setLayerVisibility(mapLayerId, "visible");
+
+			const manifestIndex = this.getDifficultyManifestIndex(map_config);
+			if (this.parkingDifficultyLoadedManifests[manifestIndex]) {
+				return;
+			}
+			this.loadingLayers.push(manifestIndex);
+			try {
+				const manifestResponse = await axios.get(
+					`/mapData/${manifestIndex}.json`,
+				);
+				const chunks = manifestResponse.data?.chunks || [];
+				const source = this.map.getSource(`${mapLayerId}-source`);
+				if (!source) return;
+				const seenFeatureIds = new Set();
+				const features = (
+					this.parkingDifficultySourceFeatures[mapLayerId] || []
+				).filter((feature) => {
+					const featureId = this.getParkingFeatureId(feature);
+					if (seenFeatureIds.has(featureId)) return false;
+					seenFeatureIds.add(featureId);
+					return true;
+				});
+				for (const chunk of chunks) {
+					const chunkResponse = await axios.get(
+						`/mapData/${chunk.index}.geojson`,
+					);
+					const scoredFeatures =
+						await this.scoreParkingDifficultyFeatures(
+							map_config,
+							chunkResponse.data?.features || [],
+						);
+					for (const feature of scoredFeatures) {
+						const featureId = this.getParkingFeatureId(feature);
+						if (seenFeatureIds.has(featureId)) continue;
+						seenFeatureIds.add(featureId);
+						features.push(feature);
+					}
+					source.setData({
+						type: "FeatureCollection",
+						features,
+					});
+				}
+				this.parkingDifficultySourceFeatures[mapLayerId] = features;
+				this.parkingDifficultyLoadedManifests[manifestIndex] = true;
+			} catch (e) {
+				console.error(e);
+			} finally {
+				this.loadingLayers = this.loadingLayers.filter(
+					(layer) => layer !== manifestIndex,
+				);
+			}
+		},
+		getParkingFeatureId(feature) {
+			return (
+				feature?.properties?.supply_id ||
+				`${feature?.properties?.city || ""}-${feature?.properties?.display_name || ""}-${feature?.geometry?.coordinates?.join(",") || ""}`
+			);
 		},
 		// 4. Remove any layer filters on a map layer.
 		clearByLayerFilter(map_configs) {
@@ -2667,6 +2816,102 @@ export const useMapStore = defineStore("map", {
 		/* Find Closest Data Point */
 		estimateParkingDifficulty(properties) {
 			return getParkingDifficultyScore(properties);
+		},
+		isParkingSupplyMapConfig(map_config) {
+			return [
+				"parking_supply_points_",
+				"parking_public_points_",
+				"parking_onstreet_points_",
+			].some((prefix) => map_config?.index?.startsWith(prefix));
+		},
+		getFeaturePriceScore(properties) {
+			const priceValue = Number(properties?.price_value);
+			if (Number.isFinite(priceValue)) {
+				return Math.max(0, priceValue);
+			}
+			const tierScores = {
+				free: 0,
+				low: 20,
+				medium: 40,
+				high: 60,
+				premium: 80,
+			};
+			return tierScores[properties?.price_tier] ?? 50;
+		},
+		featureMatchesLayerKind(feature, map_config) {
+			const kind = feature?.properties?.facility_kind;
+			if (map_config?.title === "停車場") {
+				return kind === "public_parking";
+			}
+			if (map_config?.title === "路邊停車格") {
+				return kind === "onstreet";
+			}
+			return true;
+		},
+		featureMatchesMapboxFilter(feature, filter) {
+			if (!filter) return true;
+			if (filter[0] === "all") {
+				return filter.slice(1).every((item) =>
+					this.featureMatchesMapboxFilter(feature, item),
+				);
+			}
+			if (filter[0] === "==") {
+				const key = filter[1]?.[0] === "get" ? filter[1][1] : null;
+				return key ? feature?.properties?.[key] === filter[2] : true;
+			}
+			return true;
+		},
+		getVisibleLayerFeatures(layerId) {
+			const map_config = this.mapConfigs[layerId];
+			if (!map_config || !this.map.getLayer(layerId)) return [];
+			const source = this.map.getSource(`${layerId}-source`);
+			const features = source?._data?.features || [];
+			const filter = this.map.getFilter(layerId);
+			return features.filter(
+				(feature) =>
+					this.featureMatchesLayerKind(feature, map_config) &&
+					this.featureMatchesMapboxFilter(feature, filter),
+			);
+		},
+		findRecommendedParkingSupplyLocation(userCoords, locations) {
+			let bestScore = Infinity;
+			let bestLocation = null;
+			for (const location of locations) {
+				const properties = location?.properties || {};
+				if (
+					!["public_parking", "onstreet"].includes(
+						properties.facility_kind,
+					)
+				) {
+					continue;
+				}
+				if (!location?.geometry?.coordinates) continue;
+				const [lon, lat] = location.geometry.coordinates;
+				const distanceKm = calculateHaversineDistance(userCoords, {
+					latitude: lat,
+					longitude: lon,
+				});
+				if (typeof distanceKm !== "number") continue;
+				const priceScore = this.getFeaturePriceScore(properties);
+				const availabilityPenalty =
+					properties.status_label === "空位"
+						? 0
+						: properties.status_label
+							? 20
+							: 5;
+				const recommendationScore =
+					Math.min(50, distanceKm * 25) +
+					Math.min(30, (priceScore / 80) * 30) +
+					availabilityPenalty;
+				if (recommendationScore < bestScore) {
+					bestScore = recommendationScore;
+					bestLocation = {
+						...location,
+						recommendation: { distanceKm, priceScore },
+					};
+				}
+			}
+			return bestLocation;
 		},
 		findRecommendedParkingLocation(userCoords, locations) {
 			let bestScore = Infinity;
@@ -2789,8 +3034,10 @@ export const useMapStore = defineStore("map", {
 			this.loadingLayers.push("rendering");
 
 			let targetLayer = -1;
+			const visiblePointLayers = [];
 			this.currentVisibleLayers.forEach((layer, index) => {
 				if (["circle", "symbol"].includes(layer.split("-")[1])) {
+					visiblePointLayers.push(layer);
 					targetLayer = index;
 				}
 			});
@@ -2801,18 +3048,24 @@ export const useMapStore = defineStore("map", {
 			}
 
 			this.removePopup();
+			const parkingSupplyLayerIds = visiblePointLayers.filter((layerId) =>
+				this.isParkingSupplyMapConfig(this.mapConfigs[layerId]),
+			);
 			const targetLayerId = this.currentVisibleLayers[targetLayer];
-			const targetMapConfig = this.mapConfigs[targetLayerId];
+			const targetMapConfig =
+				parkingSupplyLayerIds.length > 0
+					? this.mapConfigs[parkingSupplyLayerIds[0]]
+					: this.mapConfigs[targetLayerId];
 			const layerSourceType = targetMapConfig.source;
 
 			const features = [];
 
-			if (layerSourceType === "geojson") {
-				features.push(
-					...this.map.getSource(
-						`${this.currentVisibleLayers[targetLayer]}-source`,
-					)._data.features,
-				);
+			if (parkingSupplyLayerIds.length > 0) {
+				parkingSupplyLayerIds.forEach((layerId) => {
+					features.push(...this.getVisibleLayerFeatures(layerId));
+				});
+			} else if (layerSourceType === "geojson") {
+				features.push(...this.getVisibleLayerFeatures(targetLayerId));
 			} else {
 				const res = await axios.get(
 					`${
@@ -2833,10 +3086,16 @@ export const useMapStore = defineStore("map", {
 
 			const userCoords = { longitude: lng, latitude: lat };
 			const isDifficultyLayer = targetMapConfig.title === "停車難易度";
+			const isParkingSupplyLayer = parkingSupplyLayerIds.length > 0;
 			const res = isDifficultyLayer
 				? this.findRecommendedParkingLocation(userCoords, features) ||
 				  this.findClosestLocation(userCoords, features)
-				: this.findClosestLocation(userCoords, features);
+				: isParkingSupplyLayer
+					? this.findRecommendedParkingSupplyLocation(
+							userCoords,
+							features,
+						) || this.findClosestLocation(userCoords, features)
+					: this.findClosestLocation(userCoords, features);
 
 			if (!res) {
 				this.loadingLayers.pop();
@@ -2859,6 +3118,32 @@ export const useMapStore = defineStore("map", {
 						recommend_walk_time: `約 ${walkMinutes} 分鐘`,
 						recommend_difficulty_score: `${res.recommendation.difficulty} / 100`,
 						recommend_method: "依難易度與直線距離推薦",
+					},
+				};
+				this.renderNearestRouteLine(
+					[lng, lat],
+					res.geometry.coordinates,
+				);
+			} else if (isParkingSupplyLayer && res.recommendation) {
+				const distanceKm = res.recommendation.distanceKm;
+				const walkMinutes = Math.max(
+					1,
+					Math.round((distanceKm / 4.8) * 60),
+				);
+				this.nearestPointRecommendation = {
+					layerId: parkingSupplyLayerIds.find((layerId) =>
+						this.featureMatchesLayerKind(
+							res,
+							this.mapConfigs[layerId],
+						),
+					),
+					supply_id: res.properties.supply_id,
+					properties: {
+						recommend_distance: `${distanceKm.toFixed(
+							distanceKm < 1 ? 2 : 1,
+						)} 公里`,
+						recommend_walk_time: `約 ${walkMinutes} 分鐘`,
+						recommend_method: "依距離與價格推薦",
 					},
 				};
 				this.renderNearestRouteLine(

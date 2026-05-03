@@ -32,7 +32,7 @@ def main():
     )
     repo_root = ROOT.parent
     write_geojson_snapshots(data, repo_root)
-    print("Exported parking_supply_points_taipei.geojson and parking_supply_points_metrotaipei.geojson")
+    print("Exported metro Taipei parking supply and Wanhua difficulty GeoJSON snapshots")
 
 
 if __name__ == "__main__":

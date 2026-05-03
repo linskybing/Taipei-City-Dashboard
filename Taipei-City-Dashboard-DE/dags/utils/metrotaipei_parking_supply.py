@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -159,10 +160,45 @@ def build_metrotaipei_parking_supply(engine):
 def write_geojson_snapshots(gdata, repo_root):
     map_dir = Path(repo_root) / "Taipei-City-Dashboard-FE" / "public" / "mapData"
     map_dir.mkdir(parents=True, exist_ok=True)
+    initial_difficulty_district = "萬華區"
+    difficulty_initial = gdata[gdata["district"] == initial_difficulty_district]
+    difficulty_scopes = {
+        "taipei": gdata[gdata["city"] == "taipei"],
+        "metrotaipei": gdata,
+    }
     snapshots = {
         "parking_supply_points_taipei.geojson": gdata[gdata["city"] == "taipei"],
         "parking_supply_points_metrotaipei.geojson": gdata,
+        "parking_public_points_taipei.geojson": gdata[
+            (gdata["city"] == "taipei") & (gdata["facility_kind"] == "public_parking")
+        ],
+        "parking_public_points_metrotaipei.geojson": gdata[
+            gdata["facility_kind"] == "public_parking"
+        ],
+        "parking_onstreet_points_taipei.geojson": gdata[
+            (gdata["city"] == "taipei") & (gdata["facility_kind"] == "onstreet")
+        ],
+        "parking_onstreet_points_metrotaipei.geojson": gdata[
+            gdata["facility_kind"] == "onstreet"
+        ],
+        "parking_difficulty_points_taipei_wanhua.geojson": difficulty_initial[
+            difficulty_initial["city"] == "taipei"
+        ],
+        "parking_difficulty_points_metrotaipei_wanhua.geojson": difficulty_initial,
     }
+    manifests = {}
+    for scope, scope_data in difficulty_scopes.items():
+        chunks = []
+        for idx, (district, subset) in enumerate(
+            scope_data.groupby("district", dropna=True), start=1
+        ):
+            file_stem = f"parking_difficulty_points_{scope}_chunk_{idx:02d}"
+            snapshots[f"{file_stem}.geojson"] = subset
+            chunks.append({"district": district, "index": file_stem})
+        manifests[f"parking_difficulty_points_{scope}_manifest.json"] = {
+            "initial_district": initial_difficulty_district,
+            "chunks": chunks,
+        }
     for file_name, subset in snapshots.items():
         geojson_ready = add_point_wkbgeometry_column_to_df(
             subset.copy(), subset["lng"], subset["lat"], from_crs=4326
@@ -171,4 +207,8 @@ def write_geojson_snapshots(gdata, repo_root):
             geojson_ready["data_time"] = geojson_ready["data_time"].astype(str)
         (map_dir / file_name).write_text(
             geojson_ready.to_json(drop_id=True, ensure_ascii=False), encoding="utf-8"
+        )
+    for file_name, manifest in manifests.items():
+        (map_dir / file_name).write_text(
+            json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
         )

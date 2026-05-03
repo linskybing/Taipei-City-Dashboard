@@ -180,10 +180,45 @@ def convert_twd97_to_wgs84(data, x_col, y_col):
 def _write_geojson_snapshots(gdata, repo_root):
     map_dir = repo_root / "Taipei-City-Dashboard-FE" / "public" / "mapData"
     map_dir.mkdir(parents=True, exist_ok=True)
+    initial_difficulty_district = "萬華區"
+    difficulty_initial = gdata[gdata["district"] == initial_difficulty_district]
+    difficulty_scopes = {
+        "taipei": gdata[gdata["city"] == "taipei"],
+        "metrotaipei": gdata,
+    }
     snapshots = {
         "parking_supply_points_taipei.geojson": gdata[gdata["city"] == "taipei"],
         "parking_supply_points_metrotaipei.geojson": gdata,
+        "parking_public_points_taipei.geojson": gdata[
+            (gdata["city"] == "taipei") & (gdata["facility_kind"] == "public_parking")
+        ],
+        "parking_public_points_metrotaipei.geojson": gdata[
+            gdata["facility_kind"] == "public_parking"
+        ],
+        "parking_onstreet_points_taipei.geojson": gdata[
+            (gdata["city"] == "taipei") & (gdata["facility_kind"] == "onstreet")
+        ],
+        "parking_onstreet_points_metrotaipei.geojson": gdata[
+            gdata["facility_kind"] == "onstreet"
+        ],
+        "parking_difficulty_points_taipei_wanhua.geojson": difficulty_initial[
+            difficulty_initial["city"] == "taipei"
+        ],
+        "parking_difficulty_points_metrotaipei_wanhua.geojson": difficulty_initial,
     }
+    manifests = {}
+    for scope, scope_data in difficulty_scopes.items():
+        chunks = []
+        for idx, (district, subset) in enumerate(
+            scope_data.groupby("district", dropna=True), start=1
+        ):
+            file_stem = f"parking_difficulty_points_{scope}_chunk_{idx:02d}"
+            snapshots[f"{file_stem}.geojson"] = subset
+            chunks.append({"district": district, "index": file_stem})
+        manifests[f"parking_difficulty_points_{scope}_manifest.json"] = {
+            "initial_district": initial_difficulty_district,
+            "chunks": chunks,
+        }
     for file_name, subset in snapshots.items():
         features = []
         for row in subset.to_dict(orient="records"):
@@ -210,6 +245,10 @@ def _write_geojson_snapshots(gdata, repo_root):
         payload = {"type": "FeatureCollection", "features": features}
         (map_dir / file_name).write_text(
             json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+        )
+    for file_name, manifest in manifests.items():
+        (map_dir / file_name).write_text(
+            json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
         )
 
 
