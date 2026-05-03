@@ -13,14 +13,6 @@ const POINT_GEOJSON_BY_CITY = {
 	taipei: "parking_supply_points_taipei",
 	metrotaipei: "parking_supply_points_metrotaipei",
 };
-const PARKING_GEOJSON_BY_CITY = {
-	taipei: "parking_public_points_taipei",
-	metrotaipei: "parking_public_points_metrotaipei",
-};
-const ONSTREET_GEOJSON_BY_CITY = {
-	taipei: "parking_onstreet_points_taipei",
-	metrotaipei: "parking_onstreet_points_metrotaipei",
-};
 const DIFFICULTY_GEOJSON_BY_CITY = {
 	taipei: "parking_difficulty_points_taipei_wanhua",
 	metrotaipei: "parking_difficulty_points_metrotaipei_wanhua",
@@ -44,38 +36,28 @@ const PARKING_STATUS_COLORS = [
 	"#6b7280",
 ];
 const CAPACITY = ["coalesce", ["to-number", ["get", "capacity_total"]], 0];
-const PARKING_SUPPLY_CIRCLE_RADII = {
-	"停車場":
-		[
-			"interpolate",
-			["linear"],
-			["log10", ["+", CAPACITY, 1]],
-			0,
-			3,
-			1.7,
-			4.6,
-			2.18,
-			5.4,
-			2.6,
-			6.7,
-			3,
-			8,
-		],
-	"路邊停車格":
-		[
-			"interpolate",
-			["linear"],
-			["zoom"],
-			10,
-			6,
-			12,
-			8,
-			14,
-			10.5,
-			16,
-			13,
-		],
-};
+const PARKING_RADIUS = [
+	"interpolate",
+	["linear"],
+	["log10", ["+", CAPACITY, 1]],
+	0,
+	3,
+	1.7,
+	4.6,
+	2.18,
+	5.4,
+	2.6,
+	6.7,
+	3,
+	8,
+];
+const ONSTREET_RADIUS = 1.1;
+const PARKING_SUPPLY_RADIUS = [
+	"case",
+	["==", ["get", "facility_kind"], "public_parking"],
+	PARKING_RADIUS,
+	ONSTREET_RADIUS,
+];
 const PARKING_PRICE_CIRCLE_RADIUS = ["interpolate", ["linear"], ["log10", ["+", ["coalesce", ["to-number", ["get", "price_value"]], 0], 1]], 0, 3, 1.3, 5, 1.6, 8, 1.9, 14];
 const DIFFICULTY_SCORE = ["max", 0, ["min", 100, DIFFICULTY_SCORE_EXPRESSION]];
 const DIFFICULTY_COLOR = [
@@ -108,21 +90,6 @@ function getParkingMapIndex(component, config) {
 			DIFFICULTY_GEOJSON_BY_CITY.metrotaipei
 		);
 	}
-	if (component.index === PARKING_SUPPLY_INDEX && config?.title === "停車場") {
-		return (
-			PARKING_GEOJSON_BY_CITY[component.city] ||
-			PARKING_GEOJSON_BY_CITY.metrotaipei
-		);
-	}
-	if (
-		component.index === PARKING_SUPPLY_INDEX &&
-		config?.title === "路邊停車格"
-	) {
-		return (
-			ONSTREET_GEOJSON_BY_CITY[component.city] ||
-			ONSTREET_GEOJSON_BY_CITY.metrotaipei
-		);
-	}
 	return (
 		POINT_GEOJSON_BY_CITY[component.city] ||
 		POINT_GEOJSON_BY_CITY.metrotaipei
@@ -134,22 +101,15 @@ function getParkingPaint(component, config) {
 	delete paint["layer-default-visibility"];
 
 	if (component.index === PARKING_SUPPLY_INDEX) {
-		const circleRadius = PARKING_SUPPLY_CIRCLE_RADII[config.title];
-		if (circleRadius) {
-			paint["circle-radius"] = circleRadius;
-		}
-		if (config.title === "停車場") {
-			paint["circle-color"] = PARKING_STATUS_COLORS;
-			paint["circle-stroke-color"] = "rgba(0,0,0,0)";
-			paint["circle-stroke-width"] = 0;
-		}
-		if (config.title === "路邊停車格") {
-			paint["circle-color"] = PARKING_STATUS_COLORS;
-			paint["circle-stroke-color"] = "#ffffff";
-			paint["circle-stroke-width"] = 1.2;
-			paint["circle-opacity"] = 0.9;
-		}
-		paint["layer-default-visibility"] = "none";
+		paint["circle-color"] = PARKING_STATUS_COLORS;
+		paint["circle-radius"] = PARKING_SUPPLY_RADIUS;
+		paint["circle-stroke-width"] = 0;
+		paint["circle-opacity"] = [
+			"case",
+			["==", ["get", "facility_kind"], "public_parking"],
+			0.86,
+			0.75,
+		];
 	}
 	if (component.index === PARKING_PRICE_INDEX && config.title === "價格熱區") {
 		paint["circle-radius"] = PARKING_PRICE_CIRCLE_RADIUS;
@@ -176,12 +136,41 @@ function getParkingFilter(component, config) {
 function normalizeLocalParkingLayerConfig(component, config, geojsonIndex) {
 	return {
 		...config,
-		default_on: false,
+		default_on: component.index === PARKING_SUPPLY_INDEX,
 		source: "geojson",
+		type: config.type,
 		index: geojsonIndex || getParkingMapIndex(component, config),
 		filter: getParkingFilter(component, config),
+		layout: config.layout,
 		paint: getParkingPaint(component, config),
 	};
+}
+
+function getNormalizedParkingMapConfigs(component) {
+	if (component.index !== PARKING_SUPPLY_INDEX) {
+		return component.map_config
+			.filter((config) => config.type !== "fill")
+			.map((config) => normalizeLocalParkingLayerConfig(component, config));
+	}
+	const supplyConfig =
+		component.map_config.find(
+			(config) => config?.type === "circle" && config?.source === "geojson",
+		) ||
+		component.map_config.find((config) => config?.type === "circle") ||
+		component.map_config.find(Boolean);
+	if (!supplyConfig) return [];
+	return [
+		normalizeLocalParkingLayerConfig(component, {
+			...supplyConfig,
+			title: "停車點位",
+			type: "circle",
+			source: "geojson",
+			size: null,
+			icon: null,
+			filter: null,
+			layout: null,
+		}),
+	];
 }
 
 export function normalizeLocalParkingMapConfig(component) {
@@ -194,10 +183,10 @@ export function normalizeLocalParkingMapConfig(component) {
 	}
 	return {
 		...component,
-		map_config: component.map_config
-			.filter((config) => config.type !== "fill")
-			.map((config) =>
-				normalizeLocalParkingLayerConfig(component, config),
-			),
+		map_filter:
+			component.index === PARKING_SUPPLY_INDEX
+				? null
+				: component.map_filter,
+		map_config: getNormalizedParkingMapConfigs(component),
 	};
 }

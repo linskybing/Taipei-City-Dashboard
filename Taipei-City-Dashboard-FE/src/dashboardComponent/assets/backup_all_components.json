@@ -5,9 +5,9 @@
 		"map_config": [
 			{
 				"key": "supply_metrotaipei_parking",
-				"default_on": false,
-				"index": "parking_public_points_metrotaipei",
-				"title": "停車場",
+				"default_on": true,
+				"index": "parking_supply_points_metrotaipei",
+				"title": "停車點位",
 				"type": "circle",
 				"source": "geojson",
 				"size": null,
@@ -104,156 +104,22 @@
 							3,
 							8
 						],
-						0
+						1.1
 					],
-					"circle-stroke-color": "rgba(0,0,0,0)",
 					"circle-stroke-width": 0,
-					"circle-opacity": 0.86
-				},
-				"property": [
-					{
-						"key": "facility_kind_label",
-						"name": "點位種類"
-					},
-					{
-						"key": "city_label",
-						"name": "城市"
-					},
-					{
-						"key": "district",
-						"name": "行政區"
-					},
-					{
-						"key": "display_name",
-						"name": "名稱"
-					},
-					{
-						"key": "type_reference",
-						"name": "類型"
-					},
-					{
-						"key": "address",
-						"name": "地址"
-					},
-					{
-						"key": "price_raw",
-						"name": "費率"
-					},
-					{
-						"key": "price_tier_label",
-						"name": "價格級距"
-					},
-					{
-						"key": "capacity_total",
-						"name": "最大容量"
-					},
-					{
-						"key": "available_total",
-						"name": "空位"
-					},
-					{
-						"key": "occupancy_rate",
-						"name": "已佔率"
-					},
-					{
-						"key": "status_label",
-						"name": "狀態"
-					},
-					{
-						"key": "recommend_distance",
-						"name": "推薦距離"
-					},
-					{
-						"key": "recommend_walk_time",
-						"name": "步行估計"
-					},
-					{
-						"key": "recommend_method",
-						"name": "推薦方式"
-					},
-					{
-						"key": "data_time",
-						"name": "更新時間"
-					}
-				]
-			},
-			{
-				"key": "supply_metrotaipei_onstreet",
-				"default_on": false,
-				"index": "parking_onstreet_points_metrotaipei",
-				"title": "路邊停車格",
-				"type": "circle",
-				"source": "geojson",
-				"size": null,
-				"icon": null,
-				"paint": {
-					"circle-color": [
+					"circle-opacity": [
 						"case",
-						[
-							"all",
-							[
-								">",
-								[
-									"coalesce",
-									[
-										"to-number",
-										[
-											"get",
-											"available_rate"
-										]
-									],
-									-1
-								],
-								0
-							],
-							[
-								"<",
-								[
-									"coalesce",
-									[
-										"to-number",
-										[
-											"get",
-											"available_rate"
-										]
-									],
-									-1
-								],
-								0.35
-							]
-						],
-						"#f97316",
 						[
 							"==",
 							[
 								"get",
-								"status_label"
+								"facility_kind"
 							],
-							"空位"
+							"public_parking"
 						],
-						"#16a34a",
-						"#6b7280"
-					],
-					"circle-radius": [
-						"interpolate",
-						[
-							"linear"
-						],
-						[
-							"zoom"
-						],
-						10,
-						6,
-						12,
-						8,
-						14,
-						10.5,
-						16,
-						13
-					],
-					"circle-stroke-color": "#ffffff",
-					"circle-stroke-width": 1.2,
-					"circle-opacity": 0.9
+						0.86,
+						0.75
+					]
 				},
 				"property": [
 					{
@@ -320,16 +186,11 @@
 						"key": "data_time",
 						"name": "更新時間"
 					}
-				]
+				],
+				"filter": null
 			}
 		],
-		"map_filter": {
-			"mode": "byParam",
-			"byParam": {
-				"xParam": "district",
-				"yParam": "type_reference"
-			}
-		},
+		"map_filter": null,
 		"chart_config": {
 			"types": [
 				"ColumnChart"
@@ -352,7 +213,7 @@
 		"update_freq": 10,
 		"update_freq_unit": "minute",
 		"short_desc": "顯示雙北停車場與路邊停車格點位供給。",
-		"long_desc": "雙北圖表以行政區與站點類型形成複合長條；進入地圖模式後先點擊行政區長條，才載入對應行政區與類型的停車點位。剩餘空位率低於 0.35 且不為 0 的點以橘色提示。",
+		"long_desc": "雙北圖表以行政區與站點類型形成複合長條；地圖以單一低成本點圖層預設載入停車場與路邊停車格即時點位。剩餘空位率低於 0.35 且不為 0 的點以橘色提示。",
 		"use_case": "適合快速查看雙北停車場與路邊格位分布，並點擊點位檢查費率、容量與即時狀態。",
 		"links": [
 			"https://data.taipei/",
