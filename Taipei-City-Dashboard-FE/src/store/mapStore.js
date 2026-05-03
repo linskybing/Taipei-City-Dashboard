@@ -47,6 +47,10 @@ import { interpolation } from "../assets/utilityFunctions/interpolation.js";
 import { marchingSquare } from "../assets/utilityFunctions/marchingSquare.js";
 import { voronoi } from "../assets/utilityFunctions/voronoi.js";
 import { calculateHaversineDistance } from "../assets/utilityFunctions/calculateHaversineDistance";
+import {
+	countNearbyConstructionSites,
+	getParkingDifficultyScore,
+} from "../assets/utilityFunctions/parkingDifficulty";
 import { AnimatedArcLayer } from "../assets/configs/mapbox/arcAnimate.js";
 // 3D Mrt Map 相關 Utility Functions
 import { cutRouteSegment } from "../assets/utilityFunctions/getRouteForAnimation.js";
@@ -84,6 +88,8 @@ export const useMapStore = defineStore("map", {
 		tempMarkerCoordinates: null,
 		// Store the user's current location,
 		userLocation: { latitude: null, longitude: null },
+		nearestPointRecommendation: null,
+		constructionSiteCache: {},
 		// 3D Mrt Map 相關參數
 		// 模型及圖徵是否預載中
 		isPreloading: true,
@@ -466,10 +472,55 @@ export const useMapStore = defineStore("map", {
 		fetchLocalGeoJson(map_config) {
 			return axios
 				.get(`/mapData/${map_config.index}.geojson`)
-				.then((rs) => {
-					this.addGeojsonSource(map_config, rs.data);
+				.then(async (rs) => {
+					const data = await this.prepareLocalGeoJson(
+						map_config,
+						rs.data,
+					);
+					this.addGeojsonSource(map_config, data);
 				})
 				.catch((e) => console.error(e));
+		},
+		isParkingDifficultyLayer(map_config) {
+			return map_config.title === "停車難易度";
+		},
+		getConstructionSiteIndex(map_config) {
+			return map_config.index === "parking_supply_points_taipei"
+				? "traffic_construction_sites_taipei"
+				: "traffic_construction_sites_metrotaipei";
+		},
+		async getConstructionSites(map_config) {
+			const index = this.getConstructionSiteIndex(map_config);
+			if (!this.constructionSiteCache[index]) {
+				try {
+					const rs = await axios.get(`/mapData/${index}.geojson`);
+					this.constructionSiteCache[index] = rs.data.features || [];
+				} catch (e) {
+					console.error(e);
+					this.constructionSiteCache[index] = [];
+				}
+			}
+			return this.constructionSiteCache[index];
+		},
+		async prepareLocalGeoJson(map_config, data) {
+			if (!this.isParkingDifficultyLayer(map_config)) return data;
+			const constructionFeatures = await this.getConstructionSites(map_config);
+			return {
+				...data,
+				features: (data.features || []).map((feature) => {
+					const nearbyConstructionCount = countNearbyConstructionSites(
+						feature,
+						constructionFeatures,
+					);
+					const properties = {
+						...(feature.properties || {}),
+						nearby_construction_count: nearbyConstructionCount,
+					};
+					properties.difficulty_score =
+						getParkingDifficultyScore(properties);
+					return { ...feature, properties };
+				}),
+			};
 		},
 		getLayerRuntimeOptions(map_config) {
 			const paint = map_config.paint || {};
@@ -524,6 +575,10 @@ export const useMapStore = defineStore("map", {
 			this.currentVisibleLayers = this.currentVisibleLayers.filter(
 				(layerId) => layerId !== mapLayerId,
 			);
+			if (this.nearestPointRecommendation?.layerId === mapLayerId) {
+				this.nearestPointRecommendation = null;
+				this.clearNearestRouteLine();
+			}
 		},
 		// 3-1. Add a local geojson as a source in mapbox
 		addGeojsonSource(map_config, data) {
@@ -1981,7 +2036,7 @@ export const useMapStore = defineStore("map", {
 				return value;
 			};
 
-			const hitSize = 6;
+			const hitSize = 12;
 
 			const bbox = [
 				[event.point.x - hitSize, event.point.y - hitSize],
@@ -2035,6 +2090,16 @@ export const useMapStore = defineStore("map", {
 							key,
 						);
 					});
+					if (
+						this.nearestPointRecommendation?.supply_id &&
+						feature.properties.supply_id ===
+							this.nearestPointRecommendation.supply_id
+					) {
+						Object.assign(
+							feature.properties,
+							this.nearestPointRecommendation.properties,
+						);
+					}
 
 					layerClosestFeature[layerId] = { feature, distance: dist2 };
 				}
@@ -2532,6 +2597,9 @@ export const useMapStore = defineStore("map", {
 					this.renderDeckGLLayer();
 					return;
 				}
+				if (!this.map.getLayer(mapLayerId)) {
+					return;
+				}
 				this.map.setFilter(mapLayerId, null);
 				if (hasAreaAndPointLayers) {
 					if (map_config.type === "fill") {
@@ -2597,6 +2665,35 @@ export const useMapStore = defineStore("map", {
 		},
 
 		/* Find Closest Data Point */
+		estimateParkingDifficulty(properties) {
+			return getParkingDifficultyScore(properties);
+		},
+		findRecommendedParkingLocation(userCoords, locations) {
+			let bestScore = Infinity;
+			let bestLocation = null;
+			for (const location of locations) {
+				const properties = location?.properties || {};
+				if (properties.facility_kind !== "public_parking") continue;
+				if (!location?.geometry?.coordinates) continue;
+				const [lon, lat] = location.geometry.coordinates;
+				const distanceKm = calculateHaversineDistance(userCoords, {
+					latitude: lat,
+					longitude: lon,
+				});
+				if (typeof distanceKm !== "number") continue;
+				const difficulty = this.estimateParkingDifficulty(properties);
+				const recommendationScore =
+					difficulty + Math.min(40, distanceKm * 20);
+				if (recommendationScore < bestScore) {
+					bestScore = recommendationScore;
+					bestLocation = {
+						...location,
+						recommendation: { distanceKm, difficulty },
+					};
+				}
+			}
+			return bestLocation;
+		},
 		// 1. Calculate the Haversine distance between two points
 		findClosestLocation(userCoords, locations) {
 			// Check if userCoords has valid latitude and longitude
@@ -2654,6 +2751,38 @@ export const useMapStore = defineStore("map", {
 			}
 			return closestLocation;
 		},
+		clearNearestRouteLine() {
+			if (!this.map) return;
+			if (this.map.getLayer("nearest-parking-route")) {
+				this.map.removeLayer("nearest-parking-route");
+			}
+			if (this.map.getSource("nearest-parking-route-source")) {
+				this.map.removeSource("nearest-parking-route-source");
+			}
+		},
+		renderNearestRouteLine(start, end) {
+			this.clearNearestRouteLine();
+			this.map.addSource("nearest-parking-route-source", {
+				type: "geojson",
+				data: {
+					type: "Feature",
+					geometry: {
+						type: "LineString",
+						coordinates: [start, end],
+					},
+				},
+			});
+			this.map.addLayer({
+				id: "nearest-parking-route",
+				type: "line",
+				source: "nearest-parking-route-source",
+				paint: {
+					"line-color": "#38bdf8",
+					"line-width": 3,
+					"line-dasharray": [1, 1.5],
+				},
+			});
+		},
 		// 2. Fly to the closest location and trigger a popup
 		async flyToClosestLocationAndTriggerPopup(lng, lat) {
 			if (this.loadingLayers.length !== 0) return;
@@ -2672,8 +2801,9 @@ export const useMapStore = defineStore("map", {
 			}
 
 			this.removePopup();
-			const layerSourceType =
-				this.mapConfigs[this.currentVisibleLayers[targetLayer]].source;
+			const targetLayerId = this.currentVisibleLayers[targetLayer];
+			const targetMapConfig = this.mapConfigs[targetLayerId];
+			const layerSourceType = targetMapConfig.source;
 
 			const features = [];
 
@@ -2701,13 +2831,43 @@ export const useMapStore = defineStore("map", {
 				return;
 			}
 
-			const res = this.findClosestLocation(
-				{
-					longitude: lng,
-					latitude: lat,
-				},
-				features,
-			);
+			const userCoords = { longitude: lng, latitude: lat };
+			const isDifficultyLayer = targetMapConfig.title === "停車難易度";
+			const res = isDifficultyLayer
+				? this.findRecommendedParkingLocation(userCoords, features) ||
+				  this.findClosestLocation(userCoords, features)
+				: this.findClosestLocation(userCoords, features);
+
+			if (!res) {
+				this.loadingLayers.pop();
+				return;
+			}
+
+			if (isDifficultyLayer && res.recommendation) {
+				const distanceKm = res.recommendation.distanceKm;
+				const walkMinutes = Math.max(
+					1,
+					Math.round((distanceKm / 4.8) * 60),
+				);
+				this.nearestPointRecommendation = {
+					layerId: targetLayerId,
+					supply_id: res.properties.supply_id,
+					properties: {
+						recommend_distance: `${distanceKm.toFixed(
+							distanceKm < 1 ? 2 : 1,
+						)} 公里`,
+						recommend_walk_time: `約 ${walkMinutes} 分鐘`,
+						recommend_difficulty_score: `${res.recommendation.difficulty} / 100`,
+						recommend_method: "依難易度與直線距離推薦",
+					},
+				};
+				this.renderNearestRouteLine(
+					[lng, lat],
+					res.geometry.coordinates,
+				);
+			} else {
+				this.nearestPointRecommendation = null;
+			}
 
 			this.map.once("moveend", () => {
 				setTimeout(
@@ -2724,6 +2884,7 @@ export const useMapStore = defineStore("map", {
 		/* Clearing the map */
 		// 1. Called when the user is switching between maps
 		clearOnlyLayers() {
+			this.clearNearestRouteLine();
 			this.currentLayers.forEach((element) => {
 				this.map.removeLayer(element);
 				if (this.map.getSource(`${element}-source`)) {

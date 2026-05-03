@@ -34,10 +34,7 @@ const toggleOn = ref({
 	basicLayer: [],
 });
 
-const DEFAULT_VISIBLE_COMPONENTS = new Set([
-	"parking_supply_metrotaipei",
-	"parking_price_metrotaipei",
-]);
+const DEFAULT_VISIBLE_COMPONENTS = new Set([]);
 
 // Separate components with maps from those without
 const parseMapLayers = computed(() => {

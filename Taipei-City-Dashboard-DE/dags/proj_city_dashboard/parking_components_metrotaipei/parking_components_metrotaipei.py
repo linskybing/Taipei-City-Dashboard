@@ -67,6 +67,22 @@ def _ensure_component(conn, item):
     ).scalar_one()
 
 
+def _get_component_ids(conn, component_ids, external_indices):
+    ids = list(component_ids)
+    if not external_indices:
+        return ids
+    rows = conn.execute(
+        text('SELECT "index", id FROM public.components WHERE "index" = ANY(:indices)'),
+        {"indices": external_indices},
+    ).mappings()
+    external_ids = {row["index"]: row["id"] for row in rows}
+    missing = [index for index in external_indices if index not in external_ids]
+    if missing:
+        print(f"[parking_components_metrotaipei] Skip missing: {missing}", flush=True)
+    ids.extend(external_ids[index] for index in external_indices if index in external_ids)
+    return ids
+
+
 def _replace_query_chart(conn, item, map_config_ids):
     conn.execute(
         text('DELETE FROM public.query_charts WHERE "index" = :index AND city = :city'),
@@ -134,6 +150,10 @@ def seed_parking_components_metrotaipei(**_kwargs):
         for query in payload["query_charts"]:
             _replace_query_chart(conn, query, [map_ids[key] for key in query["map_config_keys"]])
         for dashboard in payload["dashboards"]:
+            local_ids = [component_ids[index] for index in dashboard["component_indices"]]
+            dashboard_component_ids = _get_component_ids(
+                conn, local_ids, dashboard.get("external_component_indices", [])
+            )
             dashboard_id = conn.execute(
                 text(
                     """
@@ -148,7 +168,7 @@ def seed_parking_components_metrotaipei(**_kwargs):
                     "index": dashboard["index"],
                     "name": dashboard["name"],
                     "icon": dashboard["icon"],
-                    "components": [component_ids[index] for index in dashboard["component_indices"]],
+                    "components": dashboard_component_ids,
                 },
             ).scalar_one()
             conn.execute(
