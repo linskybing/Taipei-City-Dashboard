@@ -1,0 +1,41 @@
+{
+  "dag_infos": {
+    "dag_id": "parking_supply_points_metrotaipei",
+    "start_date": "2026-05-02",
+    "schedule_interval": "*/10 * * * *",
+    "catchup": false,
+    "tags": [
+      "tran_parking_supply_points_metrotaipei",
+      "停車供給",
+      "雙北"
+    ],
+    "description": "Normalize Taipei and New Taipei parking lots plus onstreet parking points into one metro-scale current table for component queries and map rendering.",
+    "default_args": {
+      "owner": "airflow",
+      "email": "DEFAULT_EMAIL_LIST",
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "tran_parking_supply_points_metrotaipei",
+    "ready_data_history_table": "tran_parking_supply_mtpe_hist",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "current+history"
+  },
+  "data_infos": {
+    "name_cn": "雙北停車點位供給整併",
+    "airflow_update_freq": "every 10 minutes",
+    "source": "tran_parking, tran_parking_capacity_realtime, tran_parking_new_tpe, tran_parking_capacity_realtime_new_tpe, tran_onstreet_parking_realtime_tpe, tran_onstreet_parking_realtime_new_tpe, TDX Taipei onstreet segment metadata, New Taipei onstreet raw API",
+    "source_type": "Current tables",
+    "source_dept": "臺北市政府交通局 / 新北市政府交通局 / 交通部 TDX",
+    "gis_format": "Point",
+    "output_coordinate": "EPSG:4326",
+    "is_geometry": 1,
+    "dataset_description": "整併雙北停車場與路邊停車格的精確點位、即時狀態、價格與可辨識類型欄位，供地圖與點位分析元件使用。",
+    "etl_description": "merge Taipei and New Taipei parking-lot and onstreet current tables into one normalized point table with occupancy, type, and price fields",
+    "sensitivity": "public"
+  }
+}

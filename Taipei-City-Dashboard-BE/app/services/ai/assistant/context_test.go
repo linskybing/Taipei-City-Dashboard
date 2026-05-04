@@ -1,0 +1,162 @@
+package assistant
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/tmc/langchaingo/llms"
+)
+
+func TestNewContextDefaults(t *testing.T) {
+	ctx, err := NewContext("", "", "", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	if ctx.Theme != DefaultTheme || ctx.City != DefaultCity || ctx.Audience != DefaultAudience {
+		t.Fatalf("unexpected defaults: %+v", ctx)
+	}
+}
+
+func TestNewContextRejectsInvalidTheme(t *testing.T) {
+	if _, err := NewContext("invalid", "taipei", "government", ""); err == nil {
+		t.Fatal("expected invalid theme error")
+	}
+}
+
+func TestRecommendActionsRejectsInvalidCity(t *testing.T) {
+	_, err := RecommendActions(context.TODO(), `{"theme":"auto","city":"global","audience":"public"}`)
+	if err == nil {
+		t.Fatal("expected invalid city error")
+	}
+}
+
+func TestRecommendActionsRejectsInvalidJSON(t *testing.T) {
+	_, err := RecommendActions(context.TODO(), `{bad-json`)
+	if err == nil {
+		t.Fatal("expected invalid JSON error")
+	}
+}
+
+func TestApplyContextIncludesStatRouting(t *testing.T) {
+	ctx, err := NewContext("environment", "taipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "component_id 1 完整統計診斷"}},
+	}}, ctx)
+	if len(messages) == 0 || messages[0].Role != llms.ChatMessageTypeSystem {
+		t.Fatalf("missing system message: %#v", messages)
+	}
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"完整統計診斷",
+		"component_id",
+		"全部統計工具",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestApplyContextPrioritizesComponentSearchIntent(t *testing.T) {
+	ctx, err := NewContext("disaster", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "想看防災相關組件"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"推薦組件",
+		"搜尋",
+		"search_components",
+		"get_component_snapshot",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestApplyContextUsesUserFacingOpenDataBoundary(t *testing.T) {
+	ctx, err := NewContext("commuting", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請加入新的開放資料 API 做捷運異常分析"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"不直接串接外部 API",
+		"新資料需先匯入、驗證並納入儀表板資料庫",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+	for _, internalTerm := range []string{
+		"Data-End Airflow DAG",
+		"前端、後端工具",
+		"CommonDag ETL",
+		"job_config metadata",
+		"component query",
+	} {
+		if strings.Contains(text, internalTerm) {
+			t.Fatalf("system instruction leaked internal term %q:\n%s", internalTerm, text)
+		}
+	}
+}
+
+func TestApplyContextIncludesLowConfidenceConstraint(t *testing.T) {
+	ctx, err := NewContext("disaster", "metrotaipei", "government", "")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請推薦防災組件"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	for _, want := range []string{
+		"低信心",
+		"degraded",
+		"不得直接推薦 component",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("system instruction missing %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestApplyContextStaysCompact(t *testing.T) {
+	ctx, err := NewContext("environment", "metrotaipei", "government", "main-dashboard")
+	if err != nil {
+		t.Fatalf("NewContext returned error: %v", err)
+	}
+	messages := ApplyContext([]llms.MessageContent{{
+		Role:  llms.ChatMessageTypeHuman,
+		Parts: []llms.ContentPart{llms.TextContent{Text: "請判讀環境風險"}},
+	}}, ctx)
+	text := firstTextPart(messages[0])
+	if got, limit := len([]rune(text)), 500; got > limit {
+		t.Fatalf("system instruction length = %d, want <= %d:\n%s", got, limit, text)
+	}
+}
+
+func firstTextPart(msg llms.MessageContent) string {
+	for _, part := range msg.Parts {
+		text, ok := part.(llms.TextContent)
+		if ok {
+			return text.Text
+		}
+	}
+	return ""
+}

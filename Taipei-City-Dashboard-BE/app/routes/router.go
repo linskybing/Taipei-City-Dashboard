@@ -76,18 +76,18 @@ func configureUserRoutes() {
 // configureComponentRoutes configures all component routes.
 func configureChatLogRoutes() {
 	chatLogRoutes := RouterGroup.Group("/chatlog")
-    // Apply the total request limit to all chatlog routes
-    chatLogRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
+	// Apply the total request limit to all chatlog routes
+	chatLogRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
 
-    // POST /chatlog route gets the new strict limit of 60/min
-    chatLogRoutes.POST("/", middleware.LimitAPIRequests(global.ChatLogLimitAPIRequestsTimes, global.LimitRequestsDuration),controllers.CreateChatLog)
+	// POST /chatlog route gets the new strict limit of 60/min
+	chatLogRoutes.POST("/", middleware.LimitAPIRequests(global.ChatLogLimitAPIRequestsTimes, global.LimitRequestsDuration), controllers.CreateChatLog)
 
-    // Other chatlog-related routes keep the general component limit
-    chatLogSessionRoutes := chatLogRoutes.Group("/")
-    chatLogSessionRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
+	// Other chatlog-related routes keep the general component limit
+	chatLogSessionRoutes := chatLogRoutes.Group("/")
+	chatLogSessionRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	{
 		chatLogSessionRoutes.GET("/session", controllers.GetALLChatLog)
-        chatLogSessionRoutes.GET("/session/:session", controllers.GetChatLogDetailBySession)
+		chatLogSessionRoutes.GET("/session/:session", controllers.GetChatLogDetailBySession)
 	}
 }
 
@@ -196,35 +196,3 @@ func configureContributorRoutes() {
 		contributorRoutes.DELETE("/:id", controllers.DeleteContributor)
 	}
 }
-
-func configureAIRoutes() {
-	aiRoutes := RouterGroup.Group("/ai")
-	aiRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
-	aiRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
-	aiRoutes.Use(middleware.IsLoggedIn())
-	{
-		aiRoutes.POST("/chat/twai", controllers.ChatWithTWCC)
-	}
-}
-
-// func configureLmRoutes() {
-// 	componentRoutes := RouterGroup.Group("/lm")
-
-// 	componentRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
-// 	componentRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
-// 	{
-// 		componentRoutes.GET("/", controllers.GetAllComponents)
-// 	}
-// }
-
-// func configureWsRoutes() {
-// 	wsRoutes := RouterGroup.Group("/ws")
-// 	wsRoutes.Use(middleware.LimitAPIRequests(global.IssueLimitAPIRequestsTimes, global.LimitRequestsDuration))
-// 	wsRoutes.Use(middleware.LimitTotalRequests(global.IssueLimitTotalRequestsTimes, global.LimitRequestsDuration))
-// 	wsRoutes.Use(middleware.IsLoggedIn())
-// 	wsRoutes.Use(middleware.IsSysAdm())
-// 	{
-// 		wsRoutes.GET("/", controllers.ServeWs)
-// 		wsRoutes.PUT("/write/", controllers.WriteMap)
-// 	}
-// }

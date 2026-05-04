@@ -24,7 +24,10 @@ export type ChartConfig = {
 };
 
 export type MapConfig = {
+	id?: number;
+	default_on?: boolean;
 	index: string;
+	layout?: any;
 	paint: any;
 	property: any[];
 	title: string;

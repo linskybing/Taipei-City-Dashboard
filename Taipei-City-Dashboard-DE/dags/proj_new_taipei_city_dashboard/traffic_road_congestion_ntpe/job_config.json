@@ -1,0 +1,43 @@
+{
+  "dag_infos": {
+    "dag_id": "traffic_road_congestion_ntpe",
+    "start_date": "2026-05-02",
+    "schedule_interval": "*/10 * * * *",
+    "catchup": false,
+    "tags": [
+      "traffic_congestion",
+      "道路壅塞",
+      "新北市"
+    ],
+    "description": "New Taipei road congestion ETL estimated from TDX bus realtime speed and route shape data.",
+    "default_args": {
+      "owner": "airflow",
+      "email": [
+        "DEFAULT_EMAIL_LIST"
+      ],
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "traffic_road_congestion_ntpe",
+    "ready_data_history_table": "traffic_road_congestion_ntpe_history",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "current+history"
+  },
+  "data_infos": {
+    "name_cn": "新北市道路壅塞程度(公車估計)",
+    "airflow_update_freq": "every 10 minutes",
+    "source": "https://tdx.transportdata.tw/api/basic/v2/Bus/RealTimeByFrequency/City/NewTaipei?%24format=JSON",
+    "source_type": "TDX Bus API",
+    "source_dept": "交通部運輸資料流通服務平臺(TDX)",
+    "gis_format": "LineString",
+    "output_coordinate": "EPSG:4326",
+    "is_geometry": 1,
+    "dataset_description": "以新北市公車即時速度、路線 shape 與站位資訊估計目前壅塞路段。",
+    "etl_description": "fetch bus realtime, route shape, and stop data from TDX, exclude stop-side idling buses, map-match to route segments, and classify estimated congestion",
+    "sensitivity": "public"
+  }
+}

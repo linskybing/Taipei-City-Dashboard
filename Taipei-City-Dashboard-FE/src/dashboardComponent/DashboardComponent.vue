@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 // import "./styles/chartStyles.css";
 // import "./styles/toggleswitch.css";
 import "material-icons/iconfont/material-icons.css";
@@ -83,6 +83,7 @@ const emits = defineEmits([
 	"add",
 	"info",
 	"toggle",
+	"showAllPoints",
 	"filterByParam",
 	"filterByLayer",
 	"clearByParamFilter",
@@ -111,6 +112,37 @@ const toggleOn = computed({
 
 const mousePosition = ref({ x: null, y: null });
 const showTagTooltip = ref(false);
+
+const canShowAllPoints = computed(() => {
+	if (!props.mode.includes("map")) {
+		return false;
+	}
+	if (!props.config.map_filter || props.config.map_filter.mode !== "byParam") {
+		return false;
+	}
+	const mapConfigs = props.config.map_config || [];
+	return mapConfigs.some((item) =>
+		["circle", "symbol"].includes(item?.type),
+	);
+});
+const canLoadAllDistrictChunks = computed(() => {
+	return (
+		props.mode.includes("map") &&
+		props.config.index === "parking_difficulty_spectrum_metrotaipei" &&
+		(props.config.map_config || []).some(
+			(item) => item?.title === "停車難易度",
+		)
+	);
+});
+const canShowPointAction = computed(
+	() => canShowAllPoints.value || canLoadAllDistrictChunks.value,
+);
+const pointActionLabel = computed(() =>
+	canLoadAllDistrictChunks.value ? "全區載入" : "全部點位",
+);
+const pointActionTitle = computed(() =>
+	canLoadAllDistrictChunks.value ? "分區批次載入全部難易度點位" : "顯示全部點位",
+);
 
 // Parses time data into display format
 const dataTime = computed(() => {
@@ -181,6 +213,13 @@ function updateMouseLocation(e) {
 // Updates whether to show the tag tooltip
 function changeShowTagTooltipState(state) {
 	showTagTooltip.value = state;
+}
+async function handleShowAllPoints() {
+	if (!toggleOn.value) {
+		toggleOn.value = true;
+		await nextTick();
+	}
+	emits("showAllPoints", props.config.map_config);
 }
 function returnChartComponent(name, svg) {
 	switch (name) {
@@ -325,6 +364,14 @@ function returnChartComponent(name, svg) {
         v-else-if="mode.includes('map')"
         class="dashboardcomponent-header-toggle"
       >
+        <button
+          v-if="canShowPointAction"
+          class="dashboardcomponent-header-toggle-action"
+          :title="pointActionTitle"
+          @click="handleShowAllPoints"
+        >
+          <span>blur_on</span>
+        </button>
         <label class="toggleswitch">
           <input
             v-model="toggleOn"
@@ -359,6 +406,14 @@ function returnChartComponent(name, svg) {
           </option>
         </template>
       </select>
+      <button
+        v-if="canShowPointAction && mode.includes('map')"
+        class="dashboardcomponent-control-points"
+        @click="handleShowAllPoints"
+      >
+        <span>blur_on</span>
+        <p>{{ pointActionLabel }}</p>
+      </button>
       <div
         v-if="config.chart_config.types.length > 1"
         class="dashboardcomponent-control-group"
@@ -667,6 +722,31 @@ button:hover {
 			min-height: var(--font-ms);
 			min-width: 2rem;
 			margin-top: 4px;
+			display: flex;
+			align-items: center;
+			column-gap: 8px;
+
+			&-action {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 1.75rem;
+				height: 1.75rem;
+				border-radius: 50%;
+				background-color: rgba(255, 255, 255, 0.08);
+				transition: background-color 0.2s;
+
+				&:hover {
+					background-color: rgba(255, 255, 255, 0.16);
+				}
+
+				span {
+					margin-left: 0 !important;
+					color: var(--color-highlight);
+					font-family: var(--font-icon);
+					font-size: 1rem;
+				}
+			}
 		}
 
 		@media (max-width: 760px) {
@@ -736,6 +816,33 @@ button:hover {
 
 			&-disabled {
 				cursor: not-allowed;
+			}
+		}
+
+		&-points {
+			display: flex;
+			align-items: center;
+			column-gap: 4px;
+			margin-right: 8px;
+			padding: 4px 8px;
+			border-radius: 999px;
+			background-color: rgba(255, 255, 255, 0.1);
+			color: var(--color-highlight);
+			transition: background-color 0.2s, opacity 0.2s;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.18);
+			}
+
+			span {
+				font-family: var(--font-icon);
+				font-size: var(--font-ms);
+			}
+
+			p {
+				color: inherit;
+				font-size: var(--font-s);
+				white-space: nowrap;
 			}
 		}
 	}

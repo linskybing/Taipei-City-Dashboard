@@ -1,6 +1,7 @@
 <!-- Developed by Taipei Urban Intelligence Center 2023-2024-->
 
 <script setup>
+import { computed } from "vue";
 import DashboardComponent from "../../dashboardComponent/DashboardComponent.vue";
 import { useDialogStore } from "../../store/dialogStore";
 import { useContentStore } from "../../store/contentStore";
@@ -14,6 +15,12 @@ import EmbedComponent from "./EmbedComponent.vue";
 const dialogStore = useDialogStore();
 const contentStore = useContentStore();
 const authStore = useAuthStore();
+
+const availableContributors = computed(() =>
+	(dialogStore.moreInfoContent?.contributors || [])
+		.map((userId) => contentStore.contributors[userId])
+		.filter(Boolean)
+);
 
 function getLinkTag(link, index) {
 	if (link.includes("data.taipei")) {
@@ -78,32 +85,24 @@ function getLinkTag(link, index) {
               >{{ getLinkTag(link, index) }}</a>
             </div>
           </div>
-          <div v-if="dialogStore.moreInfoContent.contributors">
+          <div v-if="availableContributors.length > 0">
             <h3>協作者</h3>
             <div class="moreinfo-info-contributors">
               <div
-                v-for="contributor in dialogStore
-                  .moreInfoContent.contributors"
-                :key="contributor"
+                v-for="contributor in availableContributors"
+                :key="contributor.user_id"
               >
                 <a
-                  :href="
-                    contentStore.contributors[contributor]
-                      .link
-                  "
+                  :href="contributor.link"
                   target="_blank"
                   rel="noreferrer"
                 ><img
                   :src="
-                    contentStore.contributors[
-                      contributor
-                    ].image.includes('http')
-                      ? contentStore.contributors[
-                        contributor
-                      ].image
-                      : `/images/contributors/${contentStore.contributors[contributor].image}`
+                    contributor.image.includes('http')
+                      ? contributor.image
+                      : `/images/contributors/${contributor.image}`
                   "
-                  :alt="`協作者-${contentStore.contributors[contributor].user_name}`"
+                  :alt="`協作者-${contributor.user_name}`"
                 >
                 </a>
               </div>

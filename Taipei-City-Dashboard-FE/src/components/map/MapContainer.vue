@@ -26,14 +26,22 @@ const villageLayer = ref(false);
 
 const canUseFindClosestPoint = computed(() => {
 	let pointLayerCount = 0;
+	let hasParkingSupplyPointLayer = false;
 
 	mapStore.currentVisibleLayers.forEach((layer) => {
 		if (["circle", "symbol"].includes(layer.split("-")[1])) {
 			pointLayerCount++;
+			if (
+				mapStore.mapConfigs[layer]?.index?.startsWith(
+					"parking_supply_points_",
+				)
+			) {
+				hasParkingSupplyPointLayer = true;
+			}
 		}
 	});
 
-	return pointLayerCount === 1;
+	return pointLayerCount === 1 || hasParkingSupplyPointLayer;
 });
 
 function toggleDistrictLayer() {

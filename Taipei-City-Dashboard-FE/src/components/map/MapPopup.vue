@@ -29,14 +29,21 @@
       </div>
     </div>
     <div class="mappopup-content">
-      <div
+      <template
         v-for="item in mapConfigs[activeTab].property"
         :key="item.key"
-        :style="{
-          display: 'flex',
-          flexDirection: 'column',
-        }"
       >
+        <div
+          v-if="
+            popupContent[activeTab]?.properties[item.key] !== undefined &&
+              popupContent[activeTab]?.properties[item.key] !== null &&
+              popupContent[activeTab]?.properties[item.key] !== ''
+          "
+          :style="{
+            display: 'flex',
+            flexDirection: 'column',
+          }"
+        >
         <div
           v-if="item.mode === 'video'"
           class="mappopup-video"
@@ -81,7 +88,8 @@
           <h3>{{ item.name }}</h3>
           <p>{{ popupContent[activeTab]?.properties[item.key] }}</p>
         </div>
-      </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>

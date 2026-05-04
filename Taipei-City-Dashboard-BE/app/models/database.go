@@ -130,6 +130,7 @@ func MigrateManagerSchema() {
 		DBManager.AutoMigrate(&Incident{})
 		DBManager.AutoMigrate(&ChatLog{})
 		DBManager.AutoMigrate(&AIChatLog{})
+		DBManager.AutoMigrate(&AIChatSession{})
 
 		// All users beneath the public group do not need to be added to the public group
 		// DBManager.Exec("ALTER TABLE auth_user_group_roles ADD CONSTRAINT check_group_id CHECK (group_id > 1);")
@@ -172,7 +173,7 @@ func ExecuteSQLFile(db *sql.DB, filename string) error {
 		if err != nil {
 			// Rollback the transaction if an error occurs
 			tx.Rollback()
-			logs.FError(err.Error())
+			logs.FError("%s", err.Error())
 		}
 	}
 

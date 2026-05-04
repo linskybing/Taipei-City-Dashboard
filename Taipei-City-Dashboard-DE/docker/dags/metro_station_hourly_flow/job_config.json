@@ -1,0 +1,43 @@
+{
+  "dag_infos": {
+    "dag_id": "metro_station_hourly_flow",
+    "start_date": "2026-04-30",
+    "schedule_interval": "0 4 15 * *",
+    "catchup": false,
+    "tags": [
+      "traffic_metro_station_hourly_flow",
+      "捷運公司",
+      "捷運分時進出量"
+    ],
+    "description": "Monthly Taipei Metro station hourly entry and exit passenger flow prepared from the open OD files through Airflow.",
+    "default_args": {
+      "owner": "airflow",
+      "email": [
+        "DEFAULT_EMAIL_LIST"
+      ],
+      "email_on_retry": false,
+      "email_on_failure": true,
+      "retries": 1,
+      "retry_delay": 60
+    },
+    "ready_data_db": "postgres_default",
+    "ready_data_default_table": "traffic_metro_station_hourly_flow",
+    "ready_data_history_table": "",
+    "raw_data_db": "postgres_default",
+    "raw_data_table": "",
+    "load_behavior": "replace"
+  },
+  "data_infos": {
+    "name_cn": "臺北捷運各站每小時進出人流",
+    "airflow_update_freq": "04:00+8 每月15日",
+    "source": "https://data.taipei/dataset/detail?id=63f31c7e-7fc3-418b-bd82-b95158755b4d",
+    "source_type": "data.taipei csv index and monthly csv",
+    "source_dept": "捷運公司",
+    "gis_format": null,
+    "output_coordinate": "",
+    "is_geometry": 0,
+    "dataset_description": "臺北捷運每日分時各車站進出站 OD 流量統計，經 Airflow 聚合為各站每小時進站與出站人流，可支援趨勢、異常與排名分析。",
+    "etl_description": "Airflow 先讀取 data.taipei 資源索引，再擷取最近三個月月檔，依日期、時段、站名與進出方向聚合人次後寫入 PostgreSQL。",
+    "sensitivity": "public"
+  }
+}
